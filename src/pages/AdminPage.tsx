@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { api, ApiClientError } from '../lib/api'
+import { adminService } from '../services/admin'
+import { ApiClientError } from '../lib/api'
 import type { AdminDeleteResult, Role, UserDto } from '../types'
 
 export function AdminPage() {
@@ -17,7 +18,7 @@ export function AdminPage() {
   const loadUsers = useCallback(async () => {
     setLoadingUsers(true)
     try {
-      setUsers(await api.get<UserDto[]>('/admin/users'))
+      setUsers(await adminService.listUsers())
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Error al listar usuarios')
     } finally {
@@ -35,7 +36,7 @@ export function AdminPage() {
     setInfo('')
     setBusy(true)
     try {
-      await api.post('/admin/users', { username: username.trim(), password, role })
+      await adminService.createUser({ username: username.trim(), password, role })
       setUsername('')
       setPassword('')
       setInfo(`Usuario ${username.trim()} creado`)
@@ -54,7 +55,7 @@ export function AdminPage() {
     setDeleteResult(null)
     setBusy(true)
     try {
-      const result = await api.delete<AdminDeleteResult>('/admin/media', { query: { path: deletePath.trim() } })
+      const result = await adminService.deleteMedia(deletePath.trim())
       setDeleteResult(result)
       setInfo('Contenido eliminado')
     } catch (err) {

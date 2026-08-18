@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { api, ApiClientError } from '../lib/api'
+import { useCallback, useEffect, useState } from 'react'
+import { rootsService } from '../services/roots'
+import { ApiClientError } from '../lib/api'
 
 export function RootsPage() {
   const [roots, setRoots] = useState<string[]>([])
@@ -12,7 +13,7 @@ export function RootsPage() {
     setLoading(true)
     setError('')
     try {
-      setRoots(await api.get<string[]>('/roots'))
+      setRoots(await rootsService.list())
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Error al cargar las raíces')
     } finally {
@@ -24,13 +25,13 @@ export function RootsPage() {
     void load()
   }, [load])
 
-  const addRoot = async (e: FormEvent) => {
+  const addRoot = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newPath.trim()) return
     setError('')
     setBusy(true)
     try {
-      setRoots(await api.post<string[]>('/roots', { path: newPath.trim() }))
+      setRoots(await rootsService.add(newPath.trim()))
       setNewPath('')
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Error al agregar la raíz')
@@ -43,7 +44,7 @@ export function RootsPage() {
     setError('')
     setBusy(true)
     try {
-      setRoots(await api.delete<string[]>('/roots', { query: { path } }))
+      setRoots(await rootsService.remove(path))
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Error al quitar la raíz')
     } finally {

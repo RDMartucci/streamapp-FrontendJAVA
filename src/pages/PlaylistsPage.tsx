@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, ApiClientError } from '../lib/api'
+import { playlistsService } from '../services/playlists'
+import { ApiClientError } from '../lib/api'
 import type { PlaylistDto, PlaylistSummaryDto } from '../types'
 
 export function PlaylistsPage() {
@@ -17,7 +18,7 @@ export function PlaylistsPage() {
     setLoading(true)
     setError('')
     try {
-      setPlaylists(await api.get<PlaylistSummaryDto[]>('/playlists'))
+      setPlaylists(await playlistsService.list())
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Error al cargar playlists')
     } finally {
@@ -28,7 +29,7 @@ export function PlaylistsPage() {
   const loadDetail = useCallback(async (id: number) => {
     setError('')
     try {
-      setDetail(await api.get<PlaylistDto>(`/playlists/${id}`))
+      setDetail(await playlistsService.get(id))
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Error al cargar la playlist')
     }
@@ -41,7 +42,7 @@ export function PlaylistsPage() {
   const create = async () => {
     if (!newName.trim()) return
     try {
-      const created = await api.post<PlaylistDto>('/playlists', { name: newName.trim() })
+      const created = await playlistsService.create(newName.trim())
       setNewName('')
       await load()
       setDetail(created)
@@ -53,7 +54,7 @@ export function PlaylistsPage() {
   const rename = async () => {
     if (!detail || !renameName.trim()) return
     try {
-      await api.put(`/playlists/${detail.id}`, { name: renameName.trim() })
+      await playlistsService.rename(detail.id, renameName.trim())
       setRenameName('')
       await Promise.all([load(), loadDetail(detail.id)])
     } catch (err) {
@@ -64,7 +65,7 @@ export function PlaylistsPage() {
   const removePlaylist = async () => {
     if (!detail) return
     try {
-      await api.delete(`/playlists/${detail.id}`)
+      await playlistsService.remove(detail.id)
       setDetail(null)
       await load()
     } catch (err) {
@@ -75,7 +76,7 @@ export function PlaylistsPage() {
   const addItem = async () => {
     if (!detail || !itemPath.trim()) return
     try {
-      await api.post(`/playlists/${detail.id}/items`, { path: itemPath.trim() })
+      await playlistsService.addItem(detail.id, itemPath.trim())
       setItemPath('')
       await Promise.all([load(), loadDetail(detail.id)])
     } catch (err) {
@@ -86,7 +87,7 @@ export function PlaylistsPage() {
   const removeItem = async (path: string) => {
     if (!detail) return
     try {
-      await api.delete(`/playlists/${detail.id}/items`, { query: { path } })
+      await playlistsService.removeItem(detail.id, path)
       await Promise.all([load(), loadDetail(detail.id)])
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Error al quitar item')

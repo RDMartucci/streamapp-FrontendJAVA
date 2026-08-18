@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { api, ApiClientError } from '../lib/api'
+import { favoritesService } from '../services/favorites'
+import { ApiClientError } from '../lib/api'
 
 export function PlayerPage() {
   const [params] = useSearchParams()
@@ -24,7 +25,7 @@ export function PlayerPage() {
   const addFavorite = async () => {
     setFavMsg('')
     try {
-      await api.post('/favorites', { path })
+      await favoritesService.add(path)
       setFavMsg('Agregado a favoritos')
     } catch (err) {
       setFavMsg(err instanceof ApiClientError ? err.message : 'Error al agregar a favoritos')

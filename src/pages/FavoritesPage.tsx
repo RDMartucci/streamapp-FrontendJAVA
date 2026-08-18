@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, ApiClientError } from '../lib/api'
+import { favoritesService } from '../services/favorites'
+import { ApiClientError } from '../lib/api'
 import type { FavoriteDto } from '../types'
 
 export function FavoritesPage() {
@@ -13,7 +14,7 @@ export function FavoritesPage() {
     setLoading(true)
     setError('')
     try {
-      setItems(await api.get<FavoriteDto[]>('/favorites'))
+      setItems(await favoritesService.list())
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Error al cargar favoritos')
     } finally {
@@ -33,7 +34,7 @@ export function FavoritesPage() {
 
   const remove = async (f: FavoriteDto) => {
     try {
-      await api.delete('/favorites', { query: { path: f.item.path } })
+      await favoritesService.remove(f.item.path)
       setItems((prev) => prev.filter((x) => x.id !== f.id))
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Error al quitar favorito')

@@ -26,12 +26,20 @@ src/
   App.tsx               Router + guards de autenticación/roles
   types.ts              Tipos de los DTOs del backend
   lib/
-    api.ts              Cliente HTTP (token JWT automático, errores tipados)
+    api.ts              Cliente HTTP base (token JWT automático, errores tipados)
     auth.tsx            Contexto de autenticación (login/register/logout)
+  services/             Capa de API REST: un servicio por recurso del backend
+    auth.ts             POST /api/auth/{login,register}
+    roots.ts            GET/POST/DELETE /api/roots
+    explorer.ts         GET /api/explorer
+    favorites.ts        GET/POST/DELETE /api/favorites
+    playlists.ts        CRUD /api/playlists e items
+    admin.ts            GET/POST /api/admin/users, DELETE /api/admin/media
   components/
     Layout.tsx          Sidebar + navegación + footer de sesión
   pages/
     LoginPage.tsx       Login / registro
+    RootsPage.tsx       Configuración de raíces del usuario
     ExplorerPage.tsx    Explorador de raíces/carpetas con reproducción
     PlayerPage.tsx      Reproductor (video/audio) con streamUrl
     FavoritesPage.tsx   Favoritos del usuario
@@ -39,16 +47,29 @@ src/
     AdminPage.tsx       Admin: crear usuarios y borrar contenido
 ```
 
+## Arquitectura
+
+La app consume el backend como **API REST** a través de una capa de servicios
+(`src/services/`): cada recurso del backend tiene su propio módulo con métodos
+tipados, y los componentes/páginas nunca llaman a `fetch` directamente — solo
+usan esos servicios. El cliente HTTP base (`src/lib/api.ts`) centraliza el
+token JWT, el manejo de errores y los métodos HTTP.
+
+- Si cambia un endpoint del backend, solo se actualiza el servicio de ese
+  recurso.
+- Los DTOs de respuesta viven en `src/types.ts`, alineados con el backend.
+
 ## Rutas
 
 | Ruta | Acceso | Descripción |
 |---|---|---|
 | `/login` | Público | Login / registro |
 | `/` | Autenticado | Explorador |
+| `/raices` | Autenticado | Configuración de raíces del usuario |
 | `/favoritos` | Autenticado | Favoritos |
 | `/playlists` | Autenticado | Playlists |
 | `/admin` | Solo ADMIN | Gestión de usuarios y borrado de contenido |
-| `/player` | Autenticado | Reproductor (toma `src`, `title`, `type` por query) |
+| `/player` | Autenticado | Reproductor (toma `src`, `title`, `type`, `path` por query) |
 
 ## Streaming
 

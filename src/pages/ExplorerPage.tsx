@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { api, ApiClientError } from '../lib/api'
+import { explorerService } from '../services/explorer'
+import { favoritesService } from '../services/favorites'
+import { playlistsService } from '../services/playlists'
+import { ApiClientError } from '../lib/api'
 import type { ExplorerNode, PlaylistSummaryDto } from '../types'
 
 export function ExplorerPage() {
@@ -17,9 +20,7 @@ export function ExplorerPage() {
     setLoading(true)
     setError('')
     try {
-      const list = await api.get<ExplorerNode[]>('/explorer', {
-        query: path ? { path } : {},
-      })
+      const list = await explorerService.list(path ?? undefined)
       setNodes(list)
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Error al explorar')
@@ -35,7 +36,7 @@ export function ExplorerPage() {
 
   const loadPlaylists = useCallback(async () => {
     try {
-      setPlaylists(await api.get<PlaylistSummaryDto[]>('/playlists'))
+      setPlaylists(await playlistsService.list())
     } catch {
       setPlaylists([])
     }
@@ -59,7 +60,7 @@ export function ExplorerPage() {
   const addFavorite = async (node: ExplorerNode) => {
     setFeedback('')
     try {
-      await api.post('/favorites', { path: node.path })
+      await favoritesService.add(node.path)
       setFeedback(`${node.name} agregado a favoritos`)
     } catch (err) {
       setFeedback(err instanceof ApiClientError ? err.message : 'Error al agregar a favoritos')
@@ -74,7 +75,7 @@ export function ExplorerPage() {
     setFeedback('')
     setMenuFor(null)
     try {
-      await api.post(`/playlists/${playlistId}/items`, { path: node.path })
+      await playlistsService.addItem(playlistId, node.path)
       const pl = playlists.find((p) => p.id === playlistId)
       setFeedback(`${node.name} agregado a "${pl?.name ?? ''}"`)
     } catch (err) {

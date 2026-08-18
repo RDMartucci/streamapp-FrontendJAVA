@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
-import { api, getToken, setToken, clearToken } from '../lib/api'
-import type { AuthResponse, Role } from '../types'
+import { getToken, setToken, clearToken } from '../lib/api'
+import { authService } from '../services/auth'
+import type { Role } from '../types'
 
 interface AuthContextValue {
   user: { username: string; role: Role } | null
@@ -16,7 +17,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<{ username: string; role: Role } | null>(null)
   const [token, setTokenState] = useState<string | null>(getToken())
 
-  const applyAuth = useCallback((auth: AuthResponse) => {
+  const applyAuth = useCallback((auth: { token: string; username: string; role: Role }) => {
     setToken(auth.token)
     setTokenState(auth.token)
     setUser({ username: auth.username, role: auth.role })
@@ -24,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (username: string, password: string) => {
-      const auth = await api.post<AuthResponse>('/auth/login', { username, password }, { auth: false })
+      const auth = await authService.login(username, password)
       applyAuth(auth)
     },
     [applyAuth],
@@ -32,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (username: string, password: string) => {
-      const auth = await api.post<AuthResponse>('/auth/register', { username, password }, { auth: false })
+      const auth = await authService.register(username, password)
       applyAuth(auth)
     },
     [applyAuth],
