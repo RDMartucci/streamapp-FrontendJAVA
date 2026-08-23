@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { rootsService } from '../services/roots'
 import { ApiClientError } from '../lib/api'
+import { FileBrowserModal } from '../components/FileBrowserModal'
 
 export function RootsPage() {
   const [roots, setRoots] = useState<string[]>([])
@@ -8,6 +9,7 @@ export function RootsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [showBrowser, setShowBrowser] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -52,6 +54,11 @@ export function RootsPage() {
     }
   }
 
+  const handleSelectFromBrowser = (path: string) => {
+    setNewPath(path)
+    setShowBrowser(false)
+  }
+
   return (
     <div className="page">
       <header className="page-header">
@@ -75,6 +82,9 @@ export function RootsPage() {
             onChange={(e) => setNewPath(e.target.value)}
             required
           />
+          <button type="button" className="btn btn-ghost" onClick={() => setShowBrowser(true)}>
+            Examinar
+          </button>
           <button type="submit" className="btn btn-primary" disabled={busy || !newPath.trim()}>
             Agregar
           </button>
@@ -101,6 +111,13 @@ export function RootsPage() {
           </div>
         )}
       </section>
+
+      {showBrowser && (
+        <FileBrowserModal
+          onSelect={handleSelectFromBrowser}
+          onClose={() => setShowBrowser(false)}
+        />
+      )}
     </div>
   )
 }

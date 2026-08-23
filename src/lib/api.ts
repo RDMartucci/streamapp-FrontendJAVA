@@ -64,6 +64,10 @@ async function request<T>(
     } catch {
       body = { error: 'ERROR', message: `Error ${res.status}` }
     }
+    if (res.status === 401) {
+      clearToken()
+      window.location.assign('/login')
+    }
     throw new ApiClientError(res.status, body)
   }
 

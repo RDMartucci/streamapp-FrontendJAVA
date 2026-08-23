@@ -68,6 +68,11 @@ export interface AdminDeleteResult {
   catalogItemsRemoved: number
 }
 
+export interface FsEntry {
+  name: string
+  path: string
+}
+
 export interface ApiError {
   error: string
   message: string
