@@ -15,13 +15,17 @@ export interface TitleDetail {
 }
 
 export const titleDetailsService = {
-  search(query: string): Promise<TitleDetail> {
-    return api.get<TitleDetail>('/tmdb/search', { query: { q: query } })
+  async search(query: string): Promise<TitleDetail | null> {
+    const res = await api.get<TitleDetail | null>('/tmdb/search', { query: { q: query } })
+    return (res as TitleDetail | null) ?? null
   },
   detail(tmdbId: number): Promise<TitleDetail> {
     return api.get<TitleDetail>('/tmdb/detail', { query: { tmdbId: String(tmdbId) } })
   },
   series(tmdbId: number): Promise<TitleDetail> {
     return api.get<TitleDetail>('/tmdb/series', { query: { tmdbId: String(tmdbId) } })
+  },
+  savePoster(path: string, posterUrl: string): Promise<void> {
+    return api.put<void>('/poster/by-path', { path, posterUrl })
   },
 }

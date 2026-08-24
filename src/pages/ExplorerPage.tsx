@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { explorerService } from '../services/explorer'
 import { favoritesService } from '../services/favorites'
@@ -18,6 +18,7 @@ export function ExplorerPage() {
   const [feedback, setFeedback] = useState('')
   const [showDetails, setShowDetails] = useState(false)
   const [detail, setDetail] = useState<TitleDetail | null>(null)
+  const fetchedPosters = useRef<Set<string>>(new Set())
   const navigate = useNavigate()
 
   const load = useCallback(async (path: string | null) => {
@@ -35,8 +36,29 @@ export function ExplorerPage() {
   }, [])
 
   useEffect(() => {
+    fetchedPosters.current.clear()
     void load(currentPath)
   }, [currentPath, load])
+
+  // Carga automática de posters: al listar, busca en TMDB los que aún no tienen posterUrl
+  useEffect(() => {
+    const toFetch = nodes.filter((n) => n.playable && !n.posterUrl && !fetchedPosters.current.has(n.path))
+    if (toFetch.length === 0) return
+    toFetch.forEach((n) => fetchedPosters.current.add(n.path))
+    // Lanza en paralelo con límite simple (máx 6 a la vez para no saturar TMDB)
+    const batch = toFetch.slice(0, 6)
+    batch.forEach(async (node) => {
+      try {
+        const res = await titleDetailsService.search(node.name)
+        if (res?.posterUrl) {
+          setNodes((prev) => prev.map((x) => (x.path === node.path ? { ...x, posterUrl: res.posterUrl } : x)))
+          titleDetailsService.savePoster(node.path, res.posterUrl).catch(() => {})
+        }
+      } catch {
+        // ignora: 204 o error de red ya manejado, no ensucia consola
+      }
+    })
+  }, [nodes])
 
   const loadPlaylists = useCallback(async () => {
     try {
@@ -87,12 +109,21 @@ export function ExplorerPage() {
     }
   }
 
-  const handleDetailResult = useCallback((result: TitleDetail | null) => {
-    if (result) {
-      setDetail(result)
-      setShowDetails(true)
-    } else {
-      setFeedback('No se encontró info en TMDB para ese título')
+  const handleInfoClick = useCallback(async (node: ExplorerNode) => {
+    try {
+      const res = await titleDetailsService.search(node.name)
+      if (res) {
+        setDetail(res)
+        setShowDetails(true)
+        if (res.posterUrl) {
+          setNodes((prev) => prev.map((n) => (n.path === node.path ? { ...n, posterUrl: res.posterUrl } : n)))
+          titleDetailsService.savePoster(node.path, res.posterUrl).catch(() => {})
+        }
+      } else {
+        setFeedback('No se encontró info en TMDB para ese título')
+      }
+    } catch {
+      setFeedback('Error al consultar TMDB')
     }
   }, [])
 
@@ -162,8 +193,8 @@ export function ExplorerPage() {
                   title={node.name}
                   onClick={(e) => {
                     if (node.playable) {
-                      e.stopPropagation();
-                      titleDetailsService.search(node.name).then((res) => handleDetailResult(res)).catch(() => setFeedback('Error al consultar TMDB'));
+                      e.stopPropagation()
+                      void handleInfoClick(node)
                     }
                   }}
                   style={node.playable ? { cursor: 'pointer', textDecoration: 'underline' } : undefined}
@@ -197,7 +228,7 @@ export function ExplorerPage() {
                       </div>
                     )}
                   </div>
-                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => titleDetailsService.search(node.name).then((res) => handleDetailResult(res)).catch(() => setFeedback('Error al consultar TMDB'))}>
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => void handleInfoClick(node)}>
                     ℹ Info
                   </button>
                 </div>
