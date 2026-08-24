@@ -4,6 +4,8 @@ import { explorerService } from '../services/explorer'
 import { favoritesService } from '../services/favorites'
 import { playlistsService } from '../services/playlists'
 import { ApiClientError } from '../lib/api'
+import { titleDetailsService, type TitleDetail } from '../services/title-details'
+import { TitleDetailsModal } from '../components/TitleDetailsModal'
 import type { ExplorerNode, PlaylistSummaryDto } from '../types'
 
 export function ExplorerPage() {
@@ -14,6 +16,8 @@ export function ExplorerPage() {
   const [playlists, setPlaylists] = useState<PlaylistSummaryDto[]>([])
   const [menuFor, setMenuFor] = useState<string | null>(null)
   const [feedback, setFeedback] = useState('')
+  const [showDetails, setShowDetails] = useState(false)
+  const [detail, setDetail] = useState<TitleDetail | null>(null)
   const navigate = useNavigate()
 
   const load = useCallback(async (path: string | null) => {
@@ -83,6 +87,15 @@ export function ExplorerPage() {
     }
   }
 
+  const handleDetailResult = useCallback((result: TitleDetail | null) => {
+    if (result) {
+      setDetail(result)
+      setShowDetails(true)
+    } else {
+      setFeedback('No se encontró info en TMDB para ese título')
+    }
+  }, [])
+
   const crumbs = currentPath?.split('/').filter(Boolean) ?? []
 
   return (
@@ -137,10 +150,24 @@ export function ExplorerPage() {
                 className={`card ${node.playable ? 'card-playable' : ''}`}
                 onClick={() => (node.directory ? openFolder(node) : play(node))}
               >
-                <div className="card-icon">
-                  {node.directory ? '📁' : node.mediaType === 'AUDIO' ? '🎵' : node.mediaType === 'VIDEO' ? '🎬' : '📄'}
-                </div>
-                <div className="card-title" title={node.name}>
+                {node.posterUrl ? (
+                  <img src={node.posterUrl} alt={node.name} className="card-poster" loading="lazy" />
+                ) : (
+                  <div className="card-icon">
+                    {node.directory ? '📁' : node.mediaType === 'AUDIO' ? '🎵' : node.mediaType === 'VIDEO' ? '🎬' : '📄'}
+                  </div>
+                )}
+                <div
+                  className="card-title"
+                  title={node.name}
+                  onClick={(e) => {
+                    if (node.playable) {
+                      e.stopPropagation();
+                      titleDetailsService.search(node.name).then((res) => handleDetailResult(res)).catch(() => setFeedback('Error al consultar TMDB'));
+                    }
+                  }}
+                  style={node.playable ? { cursor: 'pointer', textDecoration: 'underline' } : undefined}
+                >
                   {node.name}
                 </div>
                 {node.playable && <div className="card-badge">{node.mediaType === 'AUDIO' ? 'Audio' : 'Video'}</div>}
@@ -170,11 +197,18 @@ export function ExplorerPage() {
                       </div>
                     )}
                   </div>
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => titleDetailsService.search(node.name).then((res) => handleDetailResult(res)).catch(() => setFeedback('Error al consultar TMDB'))}>
+                    ℹ Info
+                  </button>
                 </div>
               )}
             </div>
           ))}
         </div>
+      )}
+      
+      {showDetails && detail && (
+        <TitleDetailsModal isOpen={showDetails} onClose={() => setShowDetails(false)} detail={detail} />
       )}
     </div>
   )

@@ -29,6 +29,7 @@ export interface ExplorerNode {
   sizeBytes?: number
   lastModified?: string
   streamUrl?: string
+  posterUrl?: string | null
 }
 
 export interface MediaItemDto {
