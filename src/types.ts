@@ -30,6 +30,10 @@ export interface ExplorerNode {
   lastModified?: string
   streamUrl?: string
   posterUrl?: string | null
+  year?: number | null
+  genres?: string | null
+  voteAverage?: number | null
+  mediaTypeDetail?: string | null
 }
 
 export interface MediaItemDto {

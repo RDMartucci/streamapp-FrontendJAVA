@@ -8,6 +8,7 @@ import { FavoritesPage } from './pages/FavoritesPage'
 import { PlaylistsPage } from './pages/PlaylistsPage'
 import { PlayerPage } from './pages/PlayerPage'
 import { AdminPage } from './pages/AdminPage'
+import { TitleDetailPage } from './pages/TitleDetailPage'
 import type { ReactNode } from 'react'
 
 function Protected({ children }: { children: ReactNode }) {
@@ -39,6 +40,7 @@ function Router() {
         }
       >
         <Route index element={<ExplorerPage />} />
+        <Route path="detalle" element={<TitleDetailPage />} />
         <Route path="raices" element={<RootsPage />} />
         <Route path="favoritos" element={<FavoritesPage />} />
         <Route path="playlists" element={<PlaylistsPage />} />

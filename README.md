@@ -10,8 +10,8 @@ npm install
 npm run dev
 ```
 
-Servidor de desarrollo en `http://localhost:3000`. En dev, Vite proxya
-`/api` a `http://localhost:8080` (el backend), así que no hace falta CORS
+Servidor de desarrollo en `http://localhost:3003`. En dev, Vite proxya
+`/api` a `http://localhost:8081` (el backend), así que no hace falta CORS
 manual ni apuntar a otra URL.
 
 ## Requisitos

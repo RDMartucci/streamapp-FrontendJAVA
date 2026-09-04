@@ -1,25 +1,47 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { explorerService } from '../services/explorer'
-import { favoritesService } from '../services/favorites'
-import { playlistsService } from '../services/playlists'
 import { ApiClientError } from '../lib/api'
-import { titleDetailsService, type TitleDetail } from '../services/title-details'
-import { TitleDetailsModal } from '../components/TitleDetailsModal'
-import type { ExplorerNode, PlaylistSummaryDto } from '../types'
+import { titleDetailsService } from '../services/title-details'
+import { PosterPickerModal } from '../components/PosterPickerModal'
+import type { ExplorerNode } from '../types'
+
+function cleanDisplayName(raw: string): string {
+  let n = raw.replace(/\.[a-z0-9]+$/i, '').trim()
+  n = n.replace(/[-_][A-Za-z0-9]+$/, '')
+  const yearIdx = n.search(/\b(?:19|20)\d{2}\b/)
+  if (yearIdx !== -1) n = n.substring(0, yearIdx)
+  else {
+    n = n.replace(/\b\d{3,4}p\b/gi, ' ')
+    n = n.replace(/\b(?:x264|x265|H\.?264|HEVC|AVC)\b/gi, ' ')
+    n = n.replace(/\b(?:WEBRip|WEB-DL|BluRay|BRRip|DVDRip|HDR|HDTV)\b/gi, ' ')
+  }
+  n = n.replace(/[\[\]()]/g, ' ').replace(/[._-]/g, ' ').replace(/\s+/g, ' ').trim()
+  if (n.length > 35 && !n.includes(' ') && /^[A-Za-z0-9+/=]+$/.test(n)) return raw
+  return n || raw
+}
 
 export function ExplorerPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [nodes, setNodes] = useState<ExplorerNode[]>([])
-  const [currentPath, setCurrentPath] = useState<string | null>(null)
+  const [currentPath, setCurrentPath] = useState<string | null>(() => searchParams.get('path'))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [playlists, setPlaylists] = useState<PlaylistSummaryDto[]>([])
-  const [menuFor, setMenuFor] = useState<string | null>(null)
   const [feedback, setFeedback] = useState('')
-  const [showDetails, setShowDetails] = useState(false)
-  const [detail, setDetail] = useState<TitleDetail | null>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerQuery, setPickerQuery] = useState('')
+  const [pickerNode, setPickerNode] = useState<ExplorerNode | null>(null)
   const fetchedPosters = useRef<Set<string>>(new Set())
   const navigate = useNavigate()
+
+  const setPath = useCallback(
+    (path: string | null) => {
+      setCurrentPath(path)
+      if (path) setSearchParams({ path })
+      else setSearchParams({})
+    },
+    [setSearchParams],
+  )
 
   const load = useCallback(async (path: string | null) => {
     setLoading(true)
@@ -36,96 +58,60 @@ export function ExplorerPage() {
   }, [])
 
   useEffect(() => {
+    const urlPath = searchParams.get('path')
+    if (urlPath !== currentPath) setCurrentPath(urlPath)
+  }, [searchParams])
+
+  useEffect(() => {
     fetchedPosters.current.clear()
     void load(currentPath)
   }, [currentPath, load])
 
-  // Carga automática de posters: al listar, busca en TMDB los que aún no tienen posterUrl
+  // Carga automática de posters + metadatos sin sobrescribir selecciones manuales existentes.
   useEffect(() => {
-    const toFetch = nodes.filter((n) => n.playable && !n.posterUrl && !fetchedPosters.current.has(n.path))
+    const toFetch = nodes.filter(
+      (n) => n.playable && (!n.posterUrl || !n.year || !n.genres || n.voteAverage == null || !n.mediaTypeDetail) && !fetchedPosters.current.has(n.path),
+    )
     if (toFetch.length === 0) return
-    toFetch.forEach((n) => fetchedPosters.current.add(n.path))
-    // Lanza en paralelo con límite simple (máx 6 a la vez para no saturar TMDB)
     const batch = toFetch.slice(0, 6)
+    batch.forEach((n) => fetchedPosters.current.add(n.path))
     batch.forEach(async (node) => {
       try {
         const res = await titleDetailsService.search(node.name)
-        if (res?.posterUrl) {
-          setNodes((prev) => prev.map((x) => (x.path === node.path ? { ...x, posterUrl: res.posterUrl } : x)))
-          titleDetailsService.savePoster(node.path, res.posterUrl).catch(() => {})
+        if (res) {
+          const hasData = res.year || res.genres || res.voteAverage != null || res.mediaType
+          if (hasData) {
+            setNodes((prev) =>
+              prev.map((x) =>
+                x.path === node.path
+                  ? {
+                      ...x,
+                      posterUrl: x.posterUrl ?? res.posterUrl,
+                      year: res.year ?? x.year,
+                      genres: res.genres ?? x.genres,
+                      voteAverage: res.voteAverage ?? x.voteAverage,
+                      mediaTypeDetail: res.mediaType ?? x.mediaTypeDetail,
+                    }
+                  : x,
+              ),
+            )
+            titleDetailsService.savePoster(node.path, res).catch(() => {})
+          }
         }
-      } catch {
-        // ignora: 204 o error de red ya manejado, no ensucia consola
-      }
+      } catch {}
     })
   }, [nodes])
 
-  const loadPlaylists = useCallback(async () => {
-    try {
-      setPlaylists(await playlistsService.list())
-    } catch {
-      setPlaylists([])
-    }
-  }, [])
-
-  useEffect(() => {
-    void loadPlaylists()
-  }, [loadPlaylists])
-
-  const play = (node: ExplorerNode) => {
-    if (!node.playable || !node.streamUrl) return
+  const openDetail = (node: ExplorerNode) => {
+    if (!node.playable) return
     navigate(
-      `/player?src=${encodeURIComponent(node.streamUrl)}&title=${encodeURIComponent(node.name)}&type=${node.mediaType}&path=${encodeURIComponent(node.path)}`,
+      `/detalle?path=${encodeURIComponent(node.path)}&name=${encodeURIComponent(node.name)}&type=${encodeURIComponent(node.mediaType ?? '')}&streamUrl=${encodeURIComponent(node.streamUrl ?? '')}&posterUrl=${encodeURIComponent(node.posterUrl ?? '')}`,
     )
   }
 
   const openFolder = (node: ExplorerNode) => {
-    setCurrentPath(node.path)
+    setPath(node.path)
   }
-
-  const addFavorite = async (node: ExplorerNode) => {
-    setFeedback('')
-    try {
-      await favoritesService.add(node.path)
-      setFeedback(`${node.name} agregado a favoritos`)
-    } catch (err) {
-      setFeedback(err instanceof ApiClientError ? err.message : 'Error al agregar a favoritos')
-    }
-  }
-
-  const toggleMenu = (node: ExplorerNode) => {
-    setMenuFor((prev) => (prev === node.path ? null : node.path))
-  }
-
-  const addToPlaylist = async (playlistId: number, node: ExplorerNode) => {
-    setFeedback('')
-    setMenuFor(null)
-    try {
-      await playlistsService.addItem(playlistId, node.path)
-      const pl = playlists.find((p) => p.id === playlistId)
-      setFeedback(`${node.name} agregado a "${pl?.name ?? ''}"`)
-    } catch (err) {
-      setFeedback(err instanceof ApiClientError ? err.message : 'Error al agregar a la playlist')
-    }
-  }
-
-  const handleInfoClick = useCallback(async (node: ExplorerNode) => {
-    try {
-      const res = await titleDetailsService.search(node.name)
-      if (res) {
-        setDetail(res)
-        setShowDetails(true)
-        if (res.posterUrl) {
-          setNodes((prev) => prev.map((n) => (n.path === node.path ? { ...n, posterUrl: res.posterUrl } : n)))
-          titleDetailsService.savePoster(node.path, res.posterUrl).catch(() => {})
-        }
-      } else {
-        setFeedback('No se encontró info en TMDB para ese título')
-      }
-    } catch {
-      setFeedback('Error al consultar TMDB')
-    }
-  }, [])
 
   const crumbs = currentPath?.split('/').filter(Boolean) ?? []
 
@@ -137,7 +123,7 @@ export function ExplorerPage() {
 
       {crumbs.length > 0 && (
         <div className="breadcrumbs">
-          <button type="button" className="crumb" onClick={() => setCurrentPath(null)}>
+          <button type="button" className="crumb" onClick={() => setPath(null)}>
             Inicio
           </button>
           {crumbs.map((c, i) => {
@@ -146,7 +132,7 @@ export function ExplorerPage() {
             return (
               <span key={full}>
                 <span className="crumb-sep">/</span>
-                <button type="button" className="crumb" onClick={() => setCurrentPath(full)}>
+                <button type="button" className="crumb" onClick={() => setPath(full)}>
                   {c}
                 </button>
               </span>
@@ -175,71 +161,118 @@ export function ExplorerPage() {
       ) : (
         <div className="grid">
           {nodes.map((node) => (
-            <div key={node.path} className={`card-wrap${node.playable ? ' card-wrap-playable' : ''}`}>
-              <button
-                type="button"
-                className={`card ${node.playable ? 'card-playable' : ''}`}
-                onClick={() => (node.directory ? openFolder(node) : play(node))}
-              >
-                {node.posterUrl ? (
-                  <img src={node.posterUrl} alt={node.name} className="card-poster" loading="lazy" />
-                ) : (
-                  <div className="card-icon">
-                    {node.directory ? '📁' : node.mediaType === 'AUDIO' ? '🎵' : node.mediaType === 'VIDEO' ? '🎬' : '📄'}
-                  </div>
-                )}
+            <div key={node.path} className="card-wrap">
+                <button
+                  type="button"
+                  className={`card ${node.playable ? 'card-playable' : ''}`}
+                  onClick={() => (node.directory ? openFolder(node) : openDetail(node))}
+                >
+                  {node.playable && (
+                    <span className="detail-badge type-badge">
+                      {node.mediaTypeDetail === 'movie'
+                        ? 'Película'
+                        : node.mediaTypeDetail === 'series'
+                          ? 'Serie'
+                          : node.mediaType === 'AUDIO'
+                            ? 'Audio'
+                            : node.mediaType === 'VIDEO'
+                              ? 'Película'
+                              : 'Otro'}
+                    </span>
+                  )}
+                  {node.posterUrl ? (
+                    <>
+                      <img src={node.posterUrl} alt={node.name} className="card-poster" loading="lazy" />
+                      <div className="card-overlay">
+                        <div className="card-overlay-meta">
+                          {node.genres && <div className="card-overlay-genres">{node.genres.split(',').slice(0, 2).join(' · ')}</div>}
+                          <div className="card-overlay-year">
+                            {node.year && <span>{node.year}</span>}
+                            {node.voteAverage != null && (
+                              <span className="card-stars">
+                                {' '}
+                                {'★'.repeat(Math.round(node.voteAverage / 2)) + '☆'.repeat(5 - Math.round(node.voteAverage / 2))} {node.voteAverage.toFixed(1)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="card-icon">
+                      {node.directory ? '📁' : node.mediaType === 'AUDIO' ? '🎵' : node.mediaType === 'VIDEO' ? '🎬' : '📄'}
+                    </div>
+                  )}
                 <div
                   className="card-title"
                   title={node.name}
-                  onClick={(e) => {
-                    if (node.playable) {
-                      e.stopPropagation()
-                      void handleInfoClick(node)
-                    }
-                  }}
-                  style={node.playable ? { cursor: 'pointer', textDecoration: 'underline' } : undefined}
+                  style={node.playable ? { cursor: 'pointer' } : undefined}
                 >
-                  {node.name}
+                  {node.directory ? node.name : cleanDisplayName(node.name)}
                 </div>
-                {node.playable && <div className="card-badge">{node.mediaType === 'AUDIO' ? 'Audio' : 'Video'}</div>}
+                {node.playable && (
+                  <div className="card-badge">
+                    {node.year && node.voteAverage != null
+                      ? `${node.year} · ${'★'.repeat(Math.round(node.voteAverage / 2))}${'☆'.repeat(5 - Math.round(node.voteAverage / 2))} ${node.voteAverage.toFixed(1)}`
+                      : node.voteAverage != null
+                        ? `${'★'.repeat(Math.round(node.voteAverage / 2))}${'☆'.repeat(5 - Math.round(node.voteAverage / 2))} ${node.voteAverage.toFixed(1)}`
+                        : node.year
+                          ? String(node.year)
+                          : node.mediaType === 'AUDIO'
+                            ? 'Audio'
+                            : 'Video'}
+                  </div>
+                )}
               </button>
               {node.playable && (
-                <div className="card-actions">
-                  <button type="button" className="btn btn-sm" title="Agregar a favoritos" onClick={() => void addFavorite(node)}>
-                    ♥ Favorito
-                  </button>
-                  <div className="menu-wrap">
-                    <button type="button" className="btn btn-sm" onClick={() => toggleMenu(node)}>
-                      ＋ Playlist
-                    </button>
-                    {menuFor === node.path && (
-                      <div className="menu">
-                        {playlists.length === 0 ? (
-                          <div className="menu-empty">
-                            No tenés playlists. <Link to="/playlists">Crear una</Link>
-                          </div>
-                        ) : (
-                          playlists.map((pl) => (
-                            <button key={pl.id} type="button" className="menu-item" onClick={() => void addToPlaylist(pl.id, node)}>
-                              {pl.name}
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => void handleInfoClick(node)}>
-                    ℹ Info
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  style={{ width: '100%', marginTop: 4, fontSize: 11 }}
+                  onClick={() => {
+                    setPickerNode(node)
+                    setPickerQuery(node.name)
+                    setPickerOpen(true)
+                  }}
+                >
+                  🖼 Cambiar poster
+                </button>
               )}
             </div>
           ))}
         </div>
       )}
-      
-      {showDetails && detail && (
-        <TitleDetailsModal isOpen={showDetails} onClose={() => setShowDetails(false)} detail={detail} />
+
+      {pickerOpen && pickerNode && (
+        <PosterPickerModal
+          isOpen={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          query={pickerQuery}
+          onSelect={async (selected) => {
+            try {
+              await titleDetailsService.savePoster(pickerNode.path, selected)
+              setNodes((prev) =>
+                prev.map((x) =>
+                  x.path === pickerNode.path
+                    ? {
+                        ...x,
+                        posterUrl: selected.posterUrl ?? x.posterUrl,
+                        year: selected.year ?? x.year,
+                        genres: selected.genres ?? x.genres,
+                        voteAverage: selected.voteAverage ?? x.voteAverage,
+                        mediaTypeDetail: selected.mediaType ?? x.mediaTypeDetail,
+                      }
+                    : x,
+                ),
+              )
+              setFeedback(`Poster actualizado para "${cleanDisplayName(pickerNode.name)}"`)
+            } catch {
+              setFeedback('No se pudo guardar el póster')
+            } finally {
+              setPickerOpen(false)
+            }
+          }}
+        />
       )}
     </div>
   )
