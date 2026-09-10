@@ -232,7 +232,7 @@ button.user-chip:hover {
 
 .content {
   flex: 1;
-  padding: 24px 28px;
+  padding: 24px 0px;
   min-width: 0;
   max-width: 1480px;
   background: radial-gradient(900px 420px at 60% -10%, rgba(231, 184, 75, 0.07), transparent 70%);
@@ -259,11 +259,49 @@ button.user-chip:hover {
   justify-content: center;
 }
 
+.page {
+  padding: 0px 8px;
+}
 .page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
+}
+
+/* ---------- Hero ---------- */
+.gnrd-fi-hero {
+    position: relative;
+    min-height: 78vh;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+}
+
+.gnrd-fi-info {
+    max-width: 620px;
+    flex: 1 1 auto;
+}
+
+.detail-overview {
+    line-height: 1.6;
+    color: var(--text);
+}
+
+.gnrd-fi-syn.clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.gnrd-fi-syn {
+    color: #dfe3ea;
+    font-size: 15.5px;
+    line-height: 1.65;
+    margin: 0 0 8px;
+    max-width: 600px;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, .5);
 }
 
 /* ---------- Buttons ---------- */
@@ -319,6 +357,13 @@ button.user-chip:hover {
 
 .btn-block {
   width: 100%;
+}
+
+.btn-volver {
+    z-index: 10;
+    position: absolute;
+    top: 2rem;
+    left: 1rem;
 }
 
 /* ---------- Inputs ---------- */
@@ -938,7 +983,7 @@ button.user-chip:hover {
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 24px;
 }
 
 .gnulahd-grid {
@@ -1033,25 +1078,26 @@ button.user-chip:hover {
 }
 
 .detail-hero-gradient {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to right, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.72) 38%, rgba(0,0,0,0.35) 68%, transparent 100%);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 32px;
-  gap: 10px;
-  max-width: 62%;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.72) 38%, rgba(0, 0, 0, 0.35) 100%, transparent 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 80px 32px;
+    gap: 20px;
+    max-width: 100%;
 }
 
 .detail-hero-gradient .detail-title {
-  color: #fff;
+  color: rgba(224, 223, 222, 0.92);
   text-shadow: 0 2px 12px rgba(0,0,0,0.9);
   margin: 0;
 }
 
 .detail-hero-gradient .detail-meta {
-  color: rgba(255,255,255,0.92);
+  color: rgba(241, 161, 115, 0.92);
+  
 }
 
 .detail-hero-gradient .detail-badge {
@@ -1070,10 +1116,15 @@ button.user-chip:hover {
 }
 
 .detail-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    top: -180px;
+    padding: 24px;
+    left: 0;
+    background: linear-gradient(to top, var(--bg-elevated) 20%, transparent 100%);
 }
 
 .detail-title {
@@ -1082,12 +1133,14 @@ button.user-chip:hover {
 }
 
 .detail-meta {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-  color: var(--text-muted);
-  font-size: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    color: var(--text-muted);
+    font-size: 16px;
+    flex-direction: row;
+    justify-content: flex-start;
 }
 
 .detail-genres {
@@ -1105,7 +1158,7 @@ button.user-chip:hover {
   color: var(--accent-hover);
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 600;
 }
 

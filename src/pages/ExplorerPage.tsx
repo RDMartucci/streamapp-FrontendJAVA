@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { explorerService } from '../services/explorer'
+import { rootsService } from '../services/roots'
 import { ApiClientError } from '../lib/api'
 import { titleDetailsService } from '../services/title-details'
 import { PosterPickerModal } from '../components/PosterPickerModal'
@@ -24,6 +25,7 @@ function cleanDisplayName(raw: string): string {
 export function ExplorerPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [nodes, setNodes] = useState<ExplorerNode[]>([])
+  const [configuredRoots, setConfiguredRoots] = useState<string[]>([])
   const [currentPath, setCurrentPath] = useState<string | null>(() => searchParams.get('path'))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -66,6 +68,10 @@ export function ExplorerPage() {
     fetchedPosters.current.clear()
     void load(currentPath)
   }, [currentPath, load])
+
+  useEffect(() => {
+    void rootsService.list().then(setConfiguredRoots).catch(() => setConfiguredRoots([]))
+  }, [])
 
   // Carga automática de posters + metadatos sin sobrescribir selecciones manuales existentes.
   useEffect(() => {
@@ -113,7 +119,42 @@ export function ExplorerPage() {
     setPath(node.path)
   }
 
-  const crumbs = currentPath?.split('/').filter(Boolean) ?? []
+  const normalizePath = (path: string) => path.replace(/[\\/]+/g, '/').replace(/\/$/, '').toLowerCase()
+
+  const configuredRoot = currentPath
+    ? configuredRoots
+        .filter((root) => {
+          const normalizedRoot = normalizePath(root)
+          const normalizedCurrent = normalizePath(currentPath)
+          return normalizedCurrent === normalizedRoot || normalizedCurrent.startsWith(`${normalizedRoot}/`)
+        })
+        .sort((a, b) => normalizePath(b).length - normalizePath(a).length)[0]
+    : undefined
+
+  const goBack = () => {
+    if (!currentPath) return
+    if (configuredRoot && normalizePath(currentPath) === normalizePath(configuredRoot)) {
+      setPath(null)
+      return
+    }
+    const parent = currentPath.replace(/[\\/][^\\/]+[\\/]?$/, '') || null
+    setPath(parent && configuredRoot && normalizePath(parent).length < normalizePath(configuredRoot).length ? configuredRoot : parent)
+  }
+
+  const separator = currentPath?.includes('\\') ? '\\' : '/'
+  const relativeSegments = configuredRoot && currentPath
+    ? normalizePath(currentPath).slice(normalizePath(configuredRoot).length).split('/').filter(Boolean)
+    : []
+  const rootLabel = configuredRoot?.split(/[\\/]+/).filter(Boolean).at(-1)
+  const crumbs = configuredRoot && rootLabel
+    ? [
+        { label: rootLabel, path: configuredRoot },
+        ...relativeSegments.map((_, index) => ({
+          label: currentPath!.split(/[\\/]+/).filter(Boolean).slice(-relativeSegments.length)[index],
+          path: `${configuredRoot.replace(/[\\/]$/, '')}${separator}${relativeSegments.slice(0, index + 1).join(separator)}`,
+        })),
+      ]
+    : []
 
   return (
     <div className="page">
@@ -123,17 +164,18 @@ export function ExplorerPage() {
 
       {crumbs.length > 0 && (
         <div className="breadcrumbs">
+          <button type="button" className="crumb" onClick={goBack}>
+            ← Atrás
+          </button>
           <button type="button" className="crumb" onClick={() => setPath(null)}>
             Inicio
           </button>
-          {crumbs.map((c, i) => {
-            const partial = crumbs.slice(0, i + 1).join('/')
-            const full = i === crumbs.length - 1 ? currentPath : partial
+          {crumbs.map((crumb) => {
             return (
-              <span key={full}>
+              <span key={crumb.path}>
                 <span className="crumb-sep">/</span>
-                <button type="button" className="crumb" onClick={() => setPath(full)}>
-                  {c}
+                <button type="button" className="crumb" onClick={() => setPath(crumb.path)}>
+                  {crumb.label}
                 </button>
               </span>
             )

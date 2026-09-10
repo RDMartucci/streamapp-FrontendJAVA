@@ -55,6 +55,7 @@ export function TitleDetailPage() {
 
   const poster = posterParam && posterParam !== 'null' && posterParam !== '' ? decodeURIComponent(posterParam) : detail?.posterUrl
   const backdrop = detail?.backdropUrl || poster
+  const detailImage = detail?.backdropUrl || poster
   const title = detail?.title || rawName.replace(/\.[a-z0-9]+$/i, '')
   const year = detail?.year
   const genres = detail?.genres
@@ -124,12 +125,18 @@ export function TitleDetailPage() {
       {/* Backdrop */}
       {backdrop && <div className="gnulahd-backdrop" style={{ backgroundImage: `url(${backdrop})` }} />}
       <div className="gnulahd-content">
-        <button type="button" className="btn btn-ghost" onClick={handleBack} style={{ margin: '12px 0' }}>
+        {/* <button type="button" className="btn btn-ghost" onClick={handleBack} style={{ margin: '12px 0' }}>
           ← Volver al explorador
-        </button>
+        </button> */}
 
         {/* Hero: poster full width with horizontal gradient overlay */}
-        <div className="detail-hero">
+        <div className="gnrd-fi-hero">
+        {/* <div className="detail-hero"> */}
+
+        {/* Botón VOLVER AL EXPLORADOR */}
+        <button type="button" className="btn btn-ghost btn-volver" onClick={handleBack} style={{ margin: '12px 0' }}>
+          ← Volver al explorador
+        </button>
 
         {/* Breadcrumb + original title */}
         <div className="muted" style={{ fontSize: 13 }}>
@@ -140,11 +147,13 @@ export function TitleDetailPage() {
         )}
 
 
-          {poster ? <img src={poster} alt={title} className="detail-poster" /> : <div className="detail-poster detail-poster-placeholder">🎬</div>}
-          <div className="detail-hero-gradient">
-            <h1 className="detail-title" style={{ fontSize: 32, lineHeight: 1.1, color: '#fff' }}>{title}</h1>
+          {detailImage ? <img src={detailImage} alt={title} className="detail-poster" /> : <div className="detail-poster detail-poster-placeholder">🎬</div>}
+          <div className="detail-hero-gradient gnrd-fi-info">
+            <div className="detail-hero-content">
+              <h1 className="detail-title" style={{ fontSize: 70, lineHeight: 1.8, maxWidth: 920, color: '#fff' }}>{title}</h1>
+            </div>
             {detail?.titleOriginal && detail.titleOriginal !== title && (
-              <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14 }}>{detail.titleOriginal}</div>
+              <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 24 }}>{detail.titleOriginal}</div>
             )}
             <div className="detail-meta">
               <span className="detail-badge">{typeLabelDetail}</span>
@@ -161,11 +170,14 @@ export function TitleDetailPage() {
               </div>
             )}
           </div>
+        {/*</div>*/}
         </div>
 
-        <div className="detail-info" style={{ marginTop: 16 }}>
+        {/* Overview, actions, and details */}
+
+        <div className="detail-info" style={{ marginTop: 0 }}>
           {detail.overview && (
-            <p className="detail-overview" style={{ maxWidth: 720 }}>
+            <p className="detail-overview gnrd-fi-syn clamp" style={{ maxWidth: 920 }}>
               {showFullOverview || detail.overview.length < 220 ? detail.overview : detail.overview.slice(0, 220) + '...'}
               {detail.overview.length >= 220 && (
                 <button type="button" className="btn btn-ghost" style={{ padding: '2px 6px', marginLeft: 6, fontSize: 12 }} onClick={() => setShowFullOverview((v) => !v)}>
