@@ -41,12 +41,13 @@ export function FileBrowserModal({ onSelect, onClose }: FileBrowserModalProps) {
 
   const goBack = () => {
     if (currentPath === null) return
-    const parent = currentPath.replace(/\/[^/]+\/?$/, '') || null
+    const normalized = currentPath.replace(/\\/g, '/').replace(/\/+$/, '')
+    const parent = normalized.includes('/') ? normalized.slice(0, normalized.lastIndexOf('/')) || null : null
     setCurrentPath(parent)
     void load(parent)
   }
 
-  const crumbs = currentPath?.split('/').filter(Boolean) ?? []
+  const crumbs = currentPath?.replace(/\\/g, '/').split('/').filter(Boolean) ?? []
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -63,7 +64,7 @@ export function FileBrowserModal({ onSelect, onClose }: FileBrowserModalProps) {
                 ← Atrás
               </button>
               {crumbs.map((c, i) => {
-                const full = crumbs.slice(0, i + 1).join('/')
+                const full = `${crumbs.slice(0, i + 1).join('/')}${i === 0 && crumbs[i].endsWith(':') ? '/' : ''}`
                 return (
                   <span key={full}>
                     <span className="crumb-sep">/</span>

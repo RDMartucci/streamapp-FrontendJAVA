@@ -55,6 +55,9 @@ export function Layout() {
         </div>
         <nav className="nav">
           <NavLink to="/" end className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+            <span className="nav-icon">▤</span><span className="nav-label">Biblioteca</span>
+          </NavLink>
+          <NavLink to="/explorador" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
             <span className="nav-icon">⌂</span><span className="nav-label">Explorador</span>
           </NavLink>
           <NavLink to="/raices" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>

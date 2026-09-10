@@ -17,7 +17,7 @@ manual ni apuntar a otra URL.
 ## Requisitos
 
 - Node 20+
-- El backend corriendo en `http://localhost:8080` (ver `streamapp-backend/README.md`)
+- El backend corriendo en `http://localhost:8081` (ver `streamapp-backend/README.md`)
 
 ## Estructura
 

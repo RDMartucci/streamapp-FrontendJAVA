@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { LoginPage } from './pages/LoginPage'
 import { RootsPage } from './pages/RootsPage'
 import { ExplorerPage } from './pages/ExplorerPage'
+import { LibraryPage } from './pages/LibraryPage'
 import { FavoritesPage } from './pages/FavoritesPage'
 import { PlaylistsPage } from './pages/PlaylistsPage'
 import { PlayerPage } from './pages/PlayerPage'
@@ -39,7 +40,9 @@ function Router() {
           </Protected>
         }
       >
-        <Route index element={<ExplorerPage />} />
+        <Route index element={<LibraryPage />} />
+        <Route path="explorador" element={<ExplorerPage />} />
+        <Route path="biblioteca" element={<LibraryPage />} />
         <Route path="detalle" element={<TitleDetailPage />} />
         <Route path="raices" element={<RootsPage />} />
         <Route path="favoritos" element={<FavoritesPage />} />

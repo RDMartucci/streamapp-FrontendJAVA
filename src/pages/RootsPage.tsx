@@ -77,7 +77,7 @@ export function RootsPage() {
         <form className="form-row" onSubmit={(e) => void addRoot(e)}>
           <input
             className="input input-grow"
-            placeholder="Ruta absoluta (ej: D:/media)"
+            placeholder="Ruta absoluta (ej: D:\media o D:/media)"
             value={newPath}
             onChange={(e) => setNewPath(e.target.value)}
             required

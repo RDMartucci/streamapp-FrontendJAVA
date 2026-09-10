@@ -45,6 +45,14 @@ export interface MediaItemDto {
   size: number
   lastModified: string
   streamUrl: string
+  posterUrl?: string | null
+  mediaTypeDetail?: 'movie' | 'series' | null
+}
+
+export interface LibraryScanResult {
+  indexed: number
+  updated: number
+  skipped: number
 }
 
 export interface FavoriteDto {

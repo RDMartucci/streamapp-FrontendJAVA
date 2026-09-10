@@ -150,7 +150,7 @@ export function TitleDetailPage() {
           {detailImage ? <img src={detailImage} alt={title} className="detail-poster" /> : <div className="detail-poster detail-poster-placeholder">🎬</div>}
           <div className="detail-hero-gradient gnrd-fi-info">
             <div className="detail-hero-content">
-              <h1 className="detail-title" style={{ fontSize: 70, lineHeight: 1.8, maxWidth: 920, color: '#fff' }}>{title}</h1>
+              <h1 className="detail-title" style={{ fontSize: 60, lineHeight: 1.8, maxWidth: 920, color: '#fff' }}>{title}</h1>
             </div>
             {detail?.titleOriginal && detail.titleOriginal !== title && (
               <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 24 }}>{detail.titleOriginal}</div>

@@ -269,6 +269,83 @@ button.user-chip:hover {
   margin-bottom: 16px;
 }
 
+.library-toolbar {
+  display: flex;
+  margin-bottom: 18px;
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  margin-bottom: 4px;
+}
+
+.library-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 10px 0 22px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(120deg, rgba(231, 184, 75, 0.13), rgba(17, 19, 24, 0.9) 58%);
+}
+
+.library-hero h2 {
+  margin-bottom: 6px;
+}
+
+.library-hero p {
+  margin: 0;
+}
+
+.library-stats {
+  display: flex;
+  gap: 22px;
+  flex-shrink: 0;
+}
+
+.library-stats div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 64px;
+}
+
+.library-stats strong {
+  color: var(--accent-hover);
+  font-size: 24px;
+}
+
+.library-stats span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.library-toolbar .input {
+  width: min(100%, 520px);
+}
+
+.library-filter {
+  width: 150px !important;
+  margin-left: 8px;
+}
+
+@media (max-width: 680px) {
+  .library-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .library-stats {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
 /* ---------- Hero ---------- */
 .gnrd-fi-hero {
     position: relative;
