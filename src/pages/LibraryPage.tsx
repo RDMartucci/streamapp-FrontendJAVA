@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ApiClientError, resolveServerUrl } from '../lib/api'
+import { ApiClientError } from '../lib/api'
 import { libraryService } from '../services/library'
 import { titleDetailsService } from '../services/title-details'
+import { PosterPickerModal } from '../components/PosterPickerModal'
+import { MediaCard } from '../components/MediaCard'
 import type { MediaItemDto } from '../types'
 
 function displayTitle(item: MediaItemDto): string {
@@ -24,6 +26,7 @@ export function LibraryPage() {
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState('')
   const [feedback, setFeedback] = useState('')
+  const [pickerItem, setPickerItem] = useState<MediaItemDto | null>(null)
   const fetchedPosters = useRef<Set<number>>(new Set())
   const posterBatchInProgress = useRef(false)
   const [posterBatchVersion, setPosterBatchVersion] = useState(0)
@@ -154,17 +157,21 @@ export function LibraryPage() {
       ) : (
         <div className="grid">
           {items.map((item) => (
-            <button type="button" className="card card-playable" key={item.id} onClick={() => openItem(item)}>
-              {item.posterUrl ? (
-                <img src={resolveServerUrl(item.posterUrl)} alt={displayTitle(item)} className="card-poster" loading="lazy" />
-              ) : (
-                <div className="card-icon">{item.mediaType === 'AUDIO' ? '🎵' : '🎬'}</div>
-              )}
-              <div className="card-title" title={displayTitle(item)}>{displayTitle(item)}</div>
-              <div className="card-badge">
-                {item.mediaType === 'AUDIO' ? 'Audio' : item.mediaTypeDetail === 'series' ? 'Serie' : 'Película'}
-              </div>
-            </button>
+            <MediaCard
+              key={item.id}
+              name={displayTitle(item)}
+              displayName={displayTitle(item)}
+              directory={false}
+              playable
+              mediaType={item.mediaType}
+              mediaTypeDetail={item.mediaTypeDetail}
+              posterUrl={item.posterUrl}
+              year={item.year}
+              genres={item.genres}
+              voteAverage={item.voteAverage}
+              onOpen={() => openItem(item)}
+              onChangePoster={() => setPickerItem(item)}
+            />
           ))}
         </div>
       )}
@@ -178,6 +185,28 @@ export function LibraryPage() {
             Siguiente
           </button>
         </div>
+      )}
+      {pickerItem && (
+        <PosterPickerModal
+          isOpen
+          query={pickerItem.title}
+          onClose={() => setPickerItem(null)}
+          onSelect={async (selected) => {
+            try {
+              await titleDetailsService.savePoster(pickerItem.path, selected)
+              setItems((current) => current.map((item) =>
+                item.id === pickerItem.id || (selected.tmdbId != null && item.tmdbId === selected.tmdbId)
+                  ? { ...item, posterUrl: selected.posterUrl, tmdbId: selected.tmdbId, year: selected.year, genres: selected.genres, voteAverage: selected.voteAverage, mediaTypeDetail: selected.mediaType }
+                  : item,
+              ))
+              setFeedback(`Poster actualizado para "${pickerItem.title}"`)
+            } catch {
+              setError('No se pudo guardar el póster')
+            } finally {
+              setPickerItem(null)
+            }
+          }}
+        />
       )}
     </div>
   )

@@ -4,6 +4,7 @@ import { useAuth } from '../lib/auth'
 import { authService } from '../services/auth'
 import { ApiClientError } from '../lib/api'
 import type { UserDto } from '../types'
+import { BrandLogo } from './BrandLogo'
 
 export function Layout() {
   const { user, logout } = useAuth()
@@ -39,10 +40,7 @@ export function Layout() {
     <div className={`app-shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
       <aside className="sidebar">
         <div className="brand-row">
-          <div className="brand">
-            <span className="brand-dot" />
-            <span className="brand-label">StreamApp</span>
-          </div>
+          <BrandLogo />
           <button
             type="button"
             className="sidebar-toggle"

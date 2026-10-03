@@ -47,6 +47,10 @@ export interface MediaItemDto {
   streamUrl: string
   posterUrl?: string | null
   mediaTypeDetail?: 'movie' | 'series' | null
+  tmdbId?: number | null
+  year?: number | null
+  genres?: string | null
+  voteAverage?: number | null
 }
 
 export interface LibraryScanResult {

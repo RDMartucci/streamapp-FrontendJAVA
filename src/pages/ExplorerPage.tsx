@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { explorerService } from '../services/explorer'
 import { rootsService } from '../services/roots'
-import { ApiClientError, resolveServerUrl } from '../lib/api'
+import { ApiClientError } from '../lib/api'
 import { titleDetailsService } from '../services/title-details'
 import { PosterPickerModal } from '../components/PosterPickerModal'
+import { MediaCard } from '../components/MediaCard'
 import type { ExplorerNode } from '../types'
 
 function cleanDisplayName(raw: string): string {
@@ -203,84 +204,25 @@ export function ExplorerPage() {
       ) : (
         <div className="grid">
           {nodes.map((node) => (
-            <div key={node.path} className="card-wrap">
-                <button
-                  type="button"
-                  className={`card ${node.playable ? 'card-playable' : ''}`}
-                  onClick={() => (node.directory ? openFolder(node) : openDetail(node))}
-                >
-                  {node.playable && (
-                    <span className="detail-badge type-badge">
-                      {node.mediaTypeDetail === 'movie'
-                        ? 'Película'
-                        : node.mediaTypeDetail === 'series'
-                          ? 'Serie'
-                          : node.mediaType === 'AUDIO'
-                            ? 'Audio'
-                            : node.mediaType === 'VIDEO'
-                              ? 'Película'
-                              : 'Otro'}
-                    </span>
-                  )}
-                  {node.posterUrl ? (
-                    <>
-                      <img src={resolveServerUrl(node.posterUrl)} alt={node.name} className="card-poster" loading="lazy" />
-                      <div className="card-overlay">
-                        <div className="card-overlay-meta">
-                          {node.genres && <div className="card-overlay-genres">{node.genres.split(',').slice(0, 2).join(' · ')}</div>}
-                          <div className="card-overlay-year">
-                            {node.year && <span>{node.year}</span>}
-                            {node.voteAverage != null && (
-                              <span className="card-stars">
-                                {' '}
-                                {'★'.repeat(Math.round(node.voteAverage / 2)) + '☆'.repeat(5 - Math.round(node.voteAverage / 2))} {node.voteAverage.toFixed(1)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="card-icon">
-                      {node.directory ? '📁' : node.mediaType === 'AUDIO' ? '🎵' : node.mediaType === 'VIDEO' ? '🎬' : '📄'}
-                    </div>
-                  )}
-                <div
-                  className="card-title"
-                  title={node.name}
-                  style={node.playable ? { cursor: 'pointer' } : undefined}
-                >
-                  {node.directory ? node.name : cleanDisplayName(node.name)}
-                </div>
-                {node.playable && (
-                  <div className="card-badge">
-                    {node.year && node.voteAverage != null
-                      ? `${node.year} · ${'★'.repeat(Math.round(node.voteAverage / 2))}${'☆'.repeat(5 - Math.round(node.voteAverage / 2))} ${node.voteAverage.toFixed(1)}`
-                      : node.voteAverage != null
-                        ? `${'★'.repeat(Math.round(node.voteAverage / 2))}${'☆'.repeat(5 - Math.round(node.voteAverage / 2))} ${node.voteAverage.toFixed(1)}`
-                        : node.year
-                          ? String(node.year)
-                          : node.mediaType === 'AUDIO'
-                            ? 'Audio'
-                            : 'Video'}
-                  </div>
-                )}
-              </button>
-              {node.playable && (
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  style={{ width: '100%', marginTop: 4, fontSize: 11 }}
-                  onClick={() => {
-                    setPickerNode(node)
-                    setPickerQuery(node.name)
-                    setPickerOpen(true)
-                  }}
-                >
-                  🖼 Cambiar poster
-                </button>
-              )}
-            </div>
+            <MediaCard
+              key={node.path}
+              name={node.name}
+              displayName={node.directory ? node.name : cleanDisplayName(node.name)}
+              directory={node.directory}
+              playable={node.playable}
+              mediaType={node.mediaType}
+              mediaTypeDetail={node.mediaTypeDetail}
+              posterUrl={node.posterUrl}
+              year={node.year}
+              genres={node.genres}
+              voteAverage={node.voteAverage}
+              onOpen={() => (node.directory ? openFolder(node) : openDetail(node))}
+              onChangePoster={node.playable ? () => {
+                setPickerNode(node)
+                setPickerQuery(node.name)
+                setPickerOpen(true)
+              } : undefined}
+            />
           ))}
         </div>
       )}

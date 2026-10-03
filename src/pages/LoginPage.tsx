@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { ApiClientError } from '../lib/api'
+import { BrandLogo } from '../components/BrandLogo'
 
 export function LoginPage() {
   const { user, login, register } = useAuth()
@@ -42,10 +43,7 @@ export function LoginPage() {
   return (
     <div className="auth-screen">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <div className="brand brand-lg">
-          <span className="brand-dot" />
-          StreamApp
-        </div>
+        <BrandLogo className="brand-logo-login" />
         <h1>{mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}</h1>
 
         <label className="field">
