@@ -1,6 +1,12 @@
 import type { ApiError } from '../types'
 
-const BASE_URL = '/api'
+// Por defecto el cliente usa el mismo servidor desde el que se descargó.
+// VITE_SERVER_URL permite construir un cliente independiente para otro servidor.
+const configuredServerUrl = import.meta.env.VITE_SERVER_URL?.trim()
+const SERVER_ORIGIN = configuredServerUrl
+  ? configuredServerUrl.replace(/\/+$/, '')
+  : window.location.origin
+const BASE_URL = `${SERVER_ORIGIN}/api`
 
 const TOKEN_KEY = 'streamapp_token'
 
@@ -33,7 +39,7 @@ async function request<T>(
   path: string,
   options: { method?: string; body?: unknown; auth?: boolean; query?: Record<string, string> } = {},
 ): Promise<T> {
-  const url = new URL(BASE_URL + path, window.location.origin)
+  const url = new URL(BASE_URL + path)
   if (options.query) {
     for (const [key, value] of Object.entries(options.query)) {
       url.searchParams.set(key, value)
@@ -75,6 +81,11 @@ async function request<T>(
     return undefined as T
   }
   return (await res.json()) as T
+}
+
+/** Convierte una ruta relativa entregada por la API en una URL utilizable. */
+export function resolveServerUrl(path: string): string {
+  return new URL(path, SERVER_ORIGIN).toString()
 }
 
 export const api = {

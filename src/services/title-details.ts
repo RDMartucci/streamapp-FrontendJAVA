@@ -40,8 +40,10 @@ export interface TitleDetail {
 }
 
 export const titleDetailsService = {
-  async search(query: string): Promise<TitleDetail | null> {
-    const res = await api.get<TitleDetail | null>('/tmdb/search', { query: { q: query } })
+  async search(query: string, path?: string): Promise<TitleDetail | null> {
+    const res = await api.get<TitleDetail | null>('/tmdb/search', {
+      query: { q: query, ...(path ? { path } : {}) },
+    })
     return (res as TitleDetail | null) ?? null
   },
   detail(tmdbId: number): Promise<TitleDetail> {
@@ -55,6 +57,7 @@ export const titleDetailsService = {
     
     return api.put<void>('/poster/by-path', {
       path,
+      title: detail.title ?? '',
       posterUrl: detail.posterUrl ?? '',
       year: detail.year != null ? String(detail.year) : '',
       genres: detail.genres ?? '',
@@ -62,6 +65,23 @@ export const titleDetailsService = {
       titleOriginal: detail.titleOriginal ?? '',
       overview: detail.overview ?? '',
       mediaType: detail.mediaType ?? '',
+      backdropUrl: detail.backdropUrl ?? '',
+      metadataProvider: detail.tmdbId != null ? 'tmdb' : 'local',
+    })
+  },
+  updateMetadata(path: string, detail: TitleDetail): Promise<void> {
+    return api.put<void>('/poster/by-path', {
+      path,
+      title: detail.title,
+      titleOriginal: detail.titleOriginal,
+      year: detail.year != null ? String(detail.year) : '',
+      genres: detail.genres,
+      voteAverage: detail.voteAverage != null ? String(detail.voteAverage) : '',
+      overview: detail.overview,
+      mediaType: detail.mediaType,
+      posterUrl: detail.posterUrl ?? '',
+      backdropUrl: detail.backdropUrl ?? '',
+      metadataProvider: 'manual',
     })
   },
   searchList(query: string): Promise<TitleDetail[]> {

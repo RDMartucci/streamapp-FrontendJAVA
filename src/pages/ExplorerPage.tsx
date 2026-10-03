@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { explorerService } from '../services/explorer'
 import { rootsService } from '../services/roots'
-import { ApiClientError } from '../lib/api'
+import { ApiClientError, resolveServerUrl } from '../lib/api'
 import { titleDetailsService } from '../services/title-details'
 import { PosterPickerModal } from '../components/PosterPickerModal'
 import type { ExplorerNode } from '../types'
@@ -224,7 +224,7 @@ export function ExplorerPage() {
                   )}
                   {node.posterUrl ? (
                     <>
-                      <img src={node.posterUrl} alt={node.name} className="card-poster" loading="lazy" />
+                      <img src={resolveServerUrl(node.posterUrl)} alt={node.name} className="card-poster" loading="lazy" />
                       <div className="card-overlay">
                         <div className="card-overlay-meta">
                           {node.genres && <div className="card-overlay-genres">{node.genres.split(',').slice(0, 2).join(' · ')}</div>}

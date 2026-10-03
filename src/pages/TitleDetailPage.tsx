@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { titleDetailsService, type TitleDetail, type EpisodeDto } from '../services/title-details'
 import { favoritesService } from '../services/favorites'
-import { ApiClientError } from '../lib/api'
+import { ApiClientError, resolveServerUrl } from '../lib/api'
+import { downloadM3uPlaylist, launchVlc } from '../lib/external-playback'
+import { PosterPickerModal } from '../components/PosterPickerModal'
 
 function formatRuntime(min: number | null): string {
   if (!min) return ''
@@ -32,6 +34,12 @@ export function TitleDetailPage() {
   const [epLoading, setEpLoading] = useState(false)
   const [showFullOverview, setShowFullOverview] = useState(false)
   const [favMsg, setFavMsg] = useState('')
+  const [vlcMsg, setVlcMsg] = useState('')
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState<TitleDetail | null>(null)
+  const [savingMetadata, setSavingMetadata] = useState(false)
+  const [metadataMsg, setMetadataMsg] = useState('')
+  const [showMatchPicker, setShowMatchPicker] = useState(false)
 
   useEffect(() => {
     if (!rawName) {
@@ -41,21 +49,21 @@ export function TitleDetailPage() {
     }
     setLoading(true)
     titleDetailsService
-      .search(rawName)
+      .search(rawName, rawPath)
       .then((res) => {
         if (res) {
           setDetail(res)
-          if (rawPath) titleDetailsService.savePoster(rawPath, res).catch(() => {})
-        }
-        else setError('No se encontró información en TMDB para este título')
+        } else setError('No se encontró información en TMDB para este título')
       })
-      .catch(() => setError('Error al consultar TMDB'))
+      .catch((err) => setError(err instanceof ApiClientError ? err.message : 'Error al consultar TMDB'))
       .finally(() => setLoading(false))
   }, [rawName])
 
   const poster = posterParam && posterParam !== 'null' && posterParam !== '' ? decodeURIComponent(posterParam) : detail?.posterUrl
   const backdrop = detail?.backdropUrl || poster
   const detailImage = detail?.backdropUrl || poster
+  const backdropSrc = backdrop ? resolveServerUrl(backdrop) : undefined
+  const detailImageSrc = detailImage ? resolveServerUrl(detailImage) : undefined
   const title = detail?.title || rawName.replace(/\.[a-z0-9]+$/i, '')
   const year = detail?.year
   const genres = detail?.genres
@@ -72,6 +80,18 @@ export function TitleDetailPage() {
   const goPlay = () => {
     if (!streamUrl) return
     navigate(`/player?src=${encodeURIComponent(streamUrl)}&title=${encodeURIComponent(title)}&type=${type}&path=${encodeURIComponent(rawPath)}`)
+  }
+
+  const playInVlc = () => {
+    if (!streamUrl) return
+    setVlcMsg('Si el navegador lo solicita, confirma la apertura de StreamApp Player.')
+    launchVlc(streamUrl, title)
+  }
+
+  const downloadForVlc = () => {
+    if (!streamUrl) return
+    downloadM3uPlaylist(streamUrl, title)
+    setVlcMsg('Lista descargada. Ábrela desde Descargas con VLC. El enlace firmado vence en 30 minutos.')
   }
 
   const handleBack = () => {
@@ -93,6 +113,30 @@ export function TitleDetailPage() {
       setFavMsg('Agregado a favoritos ♥')
     } catch (err) {
       setFavMsg(err instanceof ApiClientError ? err.message : 'Error al agregar a favoritos')
+    }
+
+  }
+
+  const openEditor = () => {
+    if (!detail) return
+    setDraft({ ...detail })
+    setMetadataMsg('')
+    setEditing(true)
+  }
+
+  const saveMetadata = async () => {
+    if (!draft || !rawPath) return
+    setSavingMetadata(true)
+    setMetadataMsg('')
+    try {
+      await titleDetailsService.updateMetadata(rawPath, draft)
+      setDetail(draft)
+      setEditing(false)
+      setMetadataMsg('Metadata guardada')
+    } catch (err) {
+      setMetadataMsg(err instanceof ApiClientError ? err.message : 'No se pudo guardar la metadata')
+    } finally {
+      setSavingMetadata(false)
     }
   }
 
@@ -123,7 +167,7 @@ export function TitleDetailPage() {
   return (
     <div className="page" style={{ maxWidth: '100%', padding: 0 }}>
       {/* Backdrop */}
-      {backdrop && <div className="gnulahd-backdrop" style={{ backgroundImage: `url(${backdrop})` }} />}
+      {backdropSrc && <div className="gnulahd-backdrop" style={{ backgroundImage: `url(${backdropSrc})` }} />}
       <div className="gnulahd-content">
         {/* <button type="button" className="btn btn-ghost" onClick={handleBack} style={{ margin: '12px 0' }}>
           ← Volver al explorador
@@ -147,7 +191,7 @@ export function TitleDetailPage() {
         )}
 
 
-          {detailImage ? <img src={detailImage} alt={title} className="detail-poster" /> : <div className="detail-poster detail-poster-placeholder">🎬</div>}
+          {detailImageSrc ? <img src={detailImageSrc} alt={title} className="detail-poster" /> : <div className="detail-poster detail-poster-placeholder">🎬</div>}
           <div className="detail-hero-gradient gnrd-fi-info">
             <div className="detail-hero-content">
               <h1 className="detail-title" style={{ fontSize: 60, lineHeight: 1.8, maxWidth: 920, color: '#fff' }}>{title}</h1>
@@ -193,6 +237,16 @@ export function TitleDetailPage() {
                 ▶ Ver ahora
               </button>
             )}
+            {streamUrl && (
+              <button type="button" className="btn" onClick={playInVlc}>
+                ▶ Reproducir en VLC
+              </button>
+            )}
+            {streamUrl && (
+              <button type="button" className="btn btn-ghost" onClick={downloadForVlc}>
+                Descargar M3U
+              </button>
+            )}
             <button type="button" className="btn" onClick={() => void addFavorite()}>
               ♥ Favorito
             </button>
@@ -202,8 +256,18 @@ export function TitleDetailPage() {
             {hasTrailer && (
               <button type="button" className="btn" onClick={() => setShowTrailer(true)}>▶ Trailer</button>
             )}
+            <button type="button" className="btn" onClick={openEditor}>✎ Editar metadata</button>
             {favMsg && <span className="player-fav-msg">{favMsg}</span>}
+            {vlcMsg && <span className="player-fav-msg">{vlcMsg}</span>}
+            {metadataMsg && <span className="player-fav-msg">{metadataMsg}</span>}
           </div>
+          <p className="muted">
+            Windows requiere instalar el{' '}
+            <a href="/windows/install-vlc-player-bridge.ps1" download="install-vlc-player-bridge.ps1">
+              puente de VLC
+            </a>{' '}
+            una vez por usuario.
+          </p>
 
           <div className="gnulahd-grid">
             <div><span className="muted">Año</span><br /><strong>{year ?? '—'}</strong></div>
@@ -318,6 +382,44 @@ export function TitleDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {editing && draft && (
+        <div className="modal-overlay" onClick={() => setEditing(false)}>
+          <div className="modal metadata-editor" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Editar metadata</h2>
+              <button type="button" className="btn btn-ghost" onClick={() => setEditing(false)}>✕</button>
+            </div>
+            <label className="field-label">Título<input className="input" value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
+            <label className="field-label">Título original<input className="input" value={draft.titleOriginal} onChange={(event) => setDraft({ ...draft, titleOriginal: event.target.value })} /></label>
+            <label className="field-label">Año<input className="input" type="number" value={draft.year ?? ''} onChange={(event) => setDraft({ ...draft, year: event.target.value ? Number(event.target.value) : null })} /></label>
+            <label className="field-label">Géneros<input className="input" value={draft.genres} onChange={(event) => setDraft({ ...draft, genres: event.target.value })} placeholder="Acción, Drama" /></label>
+            <label className="field-label">Poster URL<input className="input" value={draft.posterUrl ?? ''} onChange={(event) => setDraft({ ...draft, posterUrl: event.target.value || null })} /></label>
+            <label className="field-label">Backdrop URL<input className="input" value={draft.backdropUrl ?? ''} onChange={(event) => setDraft({ ...draft, backdropUrl: event.target.value || null })} /></label>
+            <label className="field-label">Sinopsis<textarea className="input" rows={5} value={draft.overview} onChange={(event) => setDraft({ ...draft, overview: event.target.value })} /></label>
+            <div className="detail-actions">
+              <button type="button" className="btn" onClick={() => setShowMatchPicker(true)}>Buscar coincidencia en TMDB</button>
+              <button type="button" className="btn btn-primary" disabled={savingMetadata} onClick={() => void saveMetadata()}>
+                {savingMetadata ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={() => setEditing(false)}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {draft && (
+        <PosterPickerModal
+          isOpen={showMatchPicker}
+          query={draft.title}
+          onClose={() => setShowMatchPicker(false)}
+          onSelect={(selected) => {
+            setDraft(selected)
+            setShowMatchPicker(false)
+            setMetadataMsg('Coincidencia seleccionada. Revisá los datos y guardá los cambios.')
+          }}
+        />
       )}
     </div>
   )

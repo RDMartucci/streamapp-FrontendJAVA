@@ -334,6 +334,14 @@ button.user-chip:hover {
   margin-left: 8px;
 }
 
+.library-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 24px 0 8px;
+}
+
 @media (max-width: 680px) {
   .library-hero {
     align-items: flex-start;
@@ -963,6 +971,24 @@ button.user-chip:hover {
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.metadata-editor {
+  padding-bottom: 18px;
+  overflow-y: auto;
+}
+
+.metadata-editor .field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 20px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.metadata-editor .input {
+  color: var(--text);
 }
 
 .modal-header {

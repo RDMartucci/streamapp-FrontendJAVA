@@ -11,14 +11,19 @@ interface Props {
 export function PosterPickerModal({ isOpen, onClose, query, onSelect }: Props) {
   const [candidates, setCandidates] = useState<TitleDetail[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!isOpen || !query) return
     setLoading(true)
+    setError('')
     titleDetailsService
       .searchList(query)
       .then((list) => setCandidates(list ?? []))
-      .catch(() => setCandidates([]))
+      .catch((err: unknown) => {
+        setCandidates([])
+        setError(err instanceof Error ? err.message : 'No se pudo consultar TMDB.')
+      })
       .finally(() => setLoading(false))
   }, [isOpen, query])
 
@@ -38,14 +43,16 @@ export function PosterPickerModal({ isOpen, onClose, query, onSelect }: Props) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" style={{ width: 'min(720px, 95vw)', maxHeight: '85vh' }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Elegir carátula para "{query}"</h2>
+          <h2>Elegir coincidencia para "{query}"</h2>
           <button type="button" className="btn btn-ghost" onClick={onClose}>
             ✕
           </button>
         </div>
         <div className="modal-body">
           {loading ? (
-            <div className="muted">Buscando coincidencias en TMDB...</div>
+            <div className="muted">Buscando películas y series en TMDB...</div>
+          ) : error ? (
+            <div className="alert alert-error">{error}</div>
           ) : candidates.length === 0 ? (
             <div className="muted">Sin coincidencias. Probá con otro título o dejá el nombre más limpio.</div>
           ) : (

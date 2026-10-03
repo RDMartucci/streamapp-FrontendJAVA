@@ -1,7 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { favoritesService } from '../services/favorites'
-import { ApiClientError } from '../lib/api'
+import { ApiClientError, resolveServerUrl } from '../lib/api'
+import { downloadM3uPlaylist, launchVlc } from '../lib/external-playback'
+
+function mediaPlaybackError(media: HTMLMediaElement, label: string): string {
+  const code = media.error?.code
+  if (code === MediaError.MEDIA_ERR_NETWORK) return `Error de red al cargar ${label}. Comprueba que el backend siga conectado.`
+  if (code === MediaError.MEDIA_ERR_DECODE) return `El navegador recibió ${label}, pero no pudo decodificarlo. Puede ser un códec no compatible.`
+  if (code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) return `El formato o códec de ${label} no es compatible con este navegador.`
+  if (code === MediaError.MEDIA_ERR_ABORTED) return `La carga de ${label} fue interrumpida.`
+  return `No se pudo reproducir ${label} en el navegador (error ${code ?? 'desconocido'}).`
+}
 
 export function PlayerPage() {
   const [params] = useSearchParams()
@@ -36,7 +46,7 @@ export function PlayerPage() {
 
   const copyExternalUrl = async () => {
     try {
-      await navigator.clipboard.writeText(new URL(src, window.location.origin).toString())
+      await navigator.clipboard.writeText(resolveServerUrl(src))
       setExternalMsg(`URL copiada. Abrila con ${externalPlayer}.`)
     } catch {
       setExternalMsg('No se pudo copiar la URL del stream')
@@ -44,15 +54,13 @@ export function PlayerPage() {
   }
 
   const downloadPlaylist = () => {
-    const streamUrl = new URL(src, window.location.origin).toString()
-    const blob = new Blob([`#EXTM3U\n#EXTINF:-1,${title}\n${streamUrl}\n`], { type: 'audio/x-mpegurl' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${title.replace(/[\\/:*?"<>|]/g, '_')}.m3u`
-    link.click()
-    URL.revokeObjectURL(url)
+    downloadM3uPlaylist(src, title)
     setExternalMsg(`Lista creada para abrir con ${externalPlayer}.`)
+  }
+
+  const playInVlc = () => {
+    launchVlc(src, title)
+    setExternalMsg('Si el navegador lo solicita, confirma la apertura de StreamApp Player.')
   }
 
   const isVideo = type === 'VIDEO'
@@ -87,7 +95,7 @@ export function PlayerPage() {
             controls
             autoPlay
             onCanPlay={() => setReady(true)}
-            onError={() => setError('No se pudo reproducir este video')}
+            onError={(event) => setError(mediaPlaybackError(event.currentTarget, 'este video'))}
           >
             Tu navegador no soporta video.
           </video>
@@ -101,7 +109,7 @@ export function PlayerPage() {
               controls
               autoPlay
               onCanPlay={() => setReady(true)}
-              onError={() => setError('No se pudo reproducir este audio')}
+              onError={(event) => setError(mediaPlaybackError(event.currentTarget, 'este audio'))}
             >
               Tu navegador no soporta audio.
             </audio>
@@ -129,6 +137,9 @@ export function PlayerPage() {
           </select>
           <button type="button" className="btn" onClick={() => void copyExternalUrl()}>
             Copiar URL del stream
+          </button>
+          <button type="button" className="btn" onClick={playInVlc}>
+            Reproducir en VLC
           </button>
           <button type="button" className="btn" onClick={downloadPlaylist}>
             Descargar lista M3U

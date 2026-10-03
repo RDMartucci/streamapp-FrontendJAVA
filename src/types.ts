@@ -55,6 +55,17 @@ export interface LibraryScanResult {
   skipped: number
 }
 
+export interface LibraryPageDto {
+  items: MediaItemDto[]
+  page: number
+  size: number
+  totalItems: number
+  totalPages: number
+  movieCount: number
+  seriesCount: number
+  audioCount: number
+}
+
 export interface FavoriteDto {
   id: number
   item: MediaItemDto

@@ -3,6 +3,10 @@
 App web del backend de streaming local. React 19 + TypeScript + Vite.
 Diseñada para reproducir contenido (música y video) en viewport grande.
 
+En producción, Docker construye esta aplicación y el backend la entrega junto
+con la API. Por eso, los dispositivos cliente solo necesitan un navegador y la
+dirección del servidor, por ejemplo `http://192.168.1.50:8081`.
+
 ## Puesta en marcha
 
 ```bash
@@ -18,6 +22,10 @@ manual ni apuntar a otra URL.
 
 - Node 20+
 - El backend corriendo en `http://localhost:8081` (ver `streamapp-backend/README.md`)
+
+Por defecto el cliente usa el mismo origen desde el que se abrió. Para generar
+una copia alojada en otro sitio, copiar `.env.example` a `.env` y definir
+`VITE_SERVER_URL` con la URL del servidor antes de ejecutar el build.
 
 ## Estructura
 
@@ -80,7 +88,7 @@ con `Range`, y el backend responde `206` con `Accept-Ranges: bytes`.
 
 ## Scripts
 
-- `npm run dev` — servidor de desarrollo (proxy a :8080)
+- `npm run dev` — servidor de desarrollo (proxy a :8081)
 - `npm run build` — typecheck (`tsc -b`) + build de producción
 - `npm run preview` — servir el build
 - `npm run lint` — oxlint

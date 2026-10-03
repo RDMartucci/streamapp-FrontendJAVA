@@ -1,9 +1,11 @@
 import { api } from '../lib/api'
-import type { LibraryScanResult, MediaItemDto } from '../types'
+import type { LibraryPageDto, LibraryScanResult } from '../types'
 
 export const libraryService = {
-  list(): Promise<MediaItemDto[]> {
-    return api.get<MediaItemDto[]>('/library/items')
+  list(page = 0, size = 24, query = '', type = 'all'): Promise<LibraryPageDto> {
+    return api.get<LibraryPageDto>('/library', {
+      query: { page: String(page), size: String(size), q: query, type },
+    })
   },
 
   scan(): Promise<LibraryScanResult> {
