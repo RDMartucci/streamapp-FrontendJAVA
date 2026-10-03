@@ -66,6 +66,7 @@ export const titleDetailsService = {
       overview: detail.overview ?? '',
       mediaType: detail.mediaType ?? '',
       backdropUrl: detail.backdropUrl ?? '',
+      tmdbId: detail.tmdbId != null ? String(detail.tmdbId) : '',
       metadataProvider: detail.tmdbId != null ? 'tmdb' : 'local',
     })
   },
@@ -81,6 +82,7 @@ export const titleDetailsService = {
       mediaType: detail.mediaType,
       posterUrl: detail.posterUrl ?? '',
       backdropUrl: detail.backdropUrl ?? '',
+      tmdbId: detail.tmdbId != null ? String(detail.tmdbId) : '',
       metadataProvider: 'manual',
     })
   },
