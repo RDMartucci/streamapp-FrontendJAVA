@@ -298,8 +298,26 @@ button.user-chip:hover {
   margin-bottom: 16px;
 }
 
-.library-toolbar {
+.library-scan-actions {
   display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.library-cancel-scan {
+  border-color: rgba(248, 81, 73, 0.55);
+  color: var(--danger);
+}
+
+.library-cancel-scan:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: rgba(248, 81, 73, 0.1);
+}
+
+.library-toolbar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
   margin-bottom: 18px;
 }
 
@@ -355,12 +373,79 @@ button.user-chip:hover {
 }
 
 .library-toolbar .input {
-  width: min(100%, 520px);
+  width: 100%;
+  min-width: 0;
+}
+
+.library-title-search {
+  grid-column: span 2;
 }
 
 .library-filter {
-  width: 150px !important;
-  margin-left: 8px;
+  width: 100% !important;
+}
+
+.library-scan-status {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin: 0 0 18px;
+  padding: 16px 18px;
+  border: 1px solid rgba(230, 152, 64, 0.45);
+  border-radius: 10px;
+  background: rgba(189, 108, 16, 0.1);
+}
+
+.library-scan-status-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.library-scan-status-copy strong {
+  color: var(--accent-hover);
+}
+
+.library-scan-status-copy span {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.library-scan-status-copy .library-scan-elapsed {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.library-scan-status-copy .library-scan-eta {
+  color: var(--accent-hover);
+}
+
+.library-scan-status-copy .library-scan-cancel-message {
+  color: var(--warning);
+}
+
+.library-scan-progress {
+  position: relative;
+  width: min(30%, 260px);
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.library-scan-progress span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 42%;
+  border-radius: inherit;
+  background: var(--accent-hover);
+  animation: library-scan-indeterminate 1.4s ease-in-out infinite;
+}
+
+@keyframes library-scan-indeterminate {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(340%); }
 }
 
 .library-pagination {
@@ -371,10 +456,49 @@ button.user-chip:hover {
   margin: 24px 0 8px;
 }
 
+.library-page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.library-page-numbers .btn {
+  min-width: 40px;
+  padding-inline: 10px;
+}
+
 @media (max-width: 680px) {
+  .library-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .library-title-search {
+    grid-column: 1 / -1;
+  }
+
   .library-hero {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .library-scan-status {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .library-scan-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .library-scan-progress {
+    width: 100%;
+  }
+
+  .library-pagination {
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
   .library-stats {
@@ -1259,7 +1383,7 @@ button.user-chip:hover {
     flex-direction: column;
     gap: 12px;
     position: relative;
-    top: -180px;
+    top: -127px;
     padding: 24px;
     left: 0;
     background: linear-gradient(to top, var(--bg-elevated) 20%, transparent 100%);

@@ -50,6 +50,8 @@ export interface MediaItemDto {
   tmdbId?: number | null
   year?: number | null
   genres?: string | null
+  cast?: string | null
+  directors?: string | null
   voteAverage?: number | null
 }
 
@@ -57,6 +59,7 @@ export interface LibraryScanResult {
   indexed: number
   updated: number
   skipped: number
+  cancelled: boolean
 }
 
 export interface LibraryPageDto {

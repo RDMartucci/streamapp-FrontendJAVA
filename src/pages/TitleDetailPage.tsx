@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { titleDetailsService, type TitleDetail, type EpisodeDto } from '../services/title-details'
 import { favoritesService } from '../services/favorites'
 import { ApiClientError, resolveServerUrl } from '../lib/api'
@@ -18,6 +18,7 @@ function formatRuntime(min: number | null): string {
 export function TitleDetailPage() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const rawPath = params.get('path') || ''
   const rawName = params.get('name') || ''
   const type = params.get('type') || ''
@@ -95,6 +96,16 @@ export function TitleDetailPage() {
   }
 
   const handleBack = () => {
+    const navigationState = location.state as { returnTo?: string; returnScrollY?: number } | null
+    const returnTo = navigationState?.returnTo
+    if (returnTo) {
+      navigate(returnTo, {
+        state: navigationState.returnScrollY == null
+          ? null
+          : { restoreScrollY: navigationState.returnScrollY },
+      })
+      return
+    }
     if (window.history.length > 1) navigate(-1)
     else {
       const sep = rawPath.includes('/') ? '/' : rawPath.includes('\\') ? '\\' : null

@@ -97,3 +97,16 @@ copiar el token desde DevTools → Application → Local Storage →
 | GET | `http://localhost:3000/api/stream/{ticket}` | Stream de rango (206). El ticket sale en DevTools al reproducir, o copiándolo del JSON de favoritos/playlists |
 | GET | `http://localhost:8080/v3/api-docs` | JSON de la spec OpenAPI |
 | GET | `http://localhost:8080/api/auth/me` | `401` (requiere token — esperado) |
+
+## 10. Biblioteca, filtros y regreso desde detalle
+
+| Qué hacer | Qué esperar |
+|---|---|
+| Abrir `/` o `/biblioteca` | Se muestra la biblioteca con paginación numérica y filtros |
+| Buscar por título y combinar los filtros de tipo, actor, director, año, género y puntuación | Los desplegables ofrecen opciones del catálogo y los resultados cumplen los filtros seleccionados |
+| Avanzar a otra página y abrir un título desde una card | El detalle abre para el título seleccionado |
+| Pulsar **← Volver al explorador** desde el detalle | Regresa a la biblioteca conservando filtros, búsqueda, número de página y posición de desplazamiento |
+| Abrir un detalle desde `/explorador` y volver | Regresa a la misma ruta/carpeta y posición del explorador |
+| Pulsar **Actualizar biblioteca** | Se muestra el estado activo, tiempo transcurrido y barra indeterminada; una estimación aparece si hay historial local de duración |
+| Pulsar **Cancelar actualización** durante el escaneo | El escaneo se detiene cooperativamente y se conservan los elementos procesados antes de cancelar |
+| Completar una actualización y revisar los filtros | Las opciones de metadata se recargan para incluir los valores encontrados durante el escaneo |

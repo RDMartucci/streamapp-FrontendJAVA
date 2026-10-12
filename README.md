@@ -40,6 +40,7 @@ src/
     auth.ts             POST /api/auth/{login,register}
     roots.ts            GET/POST/DELETE /api/roots
     explorer.ts         GET /api/explorer
+    library.ts          Búsqueda paginada, opciones de filtros y actualización del catálogo
     favorites.ts        GET/POST/DELETE /api/favorites
     playlists.ts        CRUD /api/playlists e items
     admin.ts            GET/POST /api/admin/users, DELETE /api/admin/media
@@ -49,6 +50,8 @@ src/
     LoginPage.tsx       Login / registro
     RootsPage.tsx       Configuración de raíces del usuario
     ExplorerPage.tsx    Explorador de raíces/carpetas con reproducción
+    LibraryPage.tsx     Catálogo con búsqueda, filtros y actualización de biblioteca
+    TitleDetailPage.tsx Detalle TMDB y acciones sobre un título
     PlayerPage.tsx      Reproductor (video/audio) con streamUrl
     FavoritesPage.tsx   Favoritos del usuario
     PlaylistsPage.tsx   CRUD de playlists e items
@@ -72,12 +75,42 @@ token JWT, el manejo de errores y los métodos HTTP.
 | Ruta | Acceso | Descripción |
 |---|---|---|
 | `/login` | Público | Login / registro |
-| `/` | Autenticado | Explorador |
+| `/` | Autenticado | Biblioteca |
+| `/biblioteca` | Autenticado | Biblioteca |
+| `/explorador` | Autenticado | Explorador de raíces/carpetas |
+| `/detalle` | Autenticado | Detalle de un título |
 | `/raices` | Autenticado | Configuración de raíces del usuario |
 | `/favoritos` | Autenticado | Favoritos |
 | `/playlists` | Autenticado | Playlists |
 | `/admin` | Solo ADMIN | Gestión de usuarios y borrado de contenido |
 | `/player` | Autenticado | Reproductor (toma `src`, `title`, `type`, `path` por query) |
+
+## Biblioteca y explorador
+
+La biblioteca permite combinar una búsqueda por título con filtros de tipo de
+contenido, actor, director, año, género y puntuación mínima. Los filtros de
+metadata son desplegables y sus opciones se obtienen del catálogo del usuario
+mediante `GET /api/library/filter-options`; al completar una actualización se
+vuelven a cargar para incluir metadata recién indexada.
+
+La biblioteca usa paginación de 24 elementos por página y expone la búsqueda,
+los filtros y la página actual en los parámetros de la URL. Al abrir un título
+y volver al listado se conservan esos parámetros y la posición de desplazamiento.
+El explorador también conserva la posición al volver desde un detalle.
+
+**Actualizar biblioteca** muestra el estado del proceso, el tiempo transcurrido
+y una barra indeterminada (no representa un porcentaje de avance). Si hay una
+estimación anterior, presenta un tiempo restante aproximado; se calcula con la
+duración media por título guardada localmente en el navegador y separada por
+usuario. Durante el escaneo se puede solicitar la cancelación. El proceso
+comprueba la solicitud entre operaciones y puede interrumpir consultas de
+metadata a TMDB; los elementos ya indexados o actualizados se conservan.
+
+La API de biblioteca usa `GET /api/library` para resultados paginados. Acepta
+`page`, `size`, `q` (título), `type`, `actor`, `director`, `year`, `genre` y
+`stars`. La actualización se inicia con `POST /api/library/scan` y se cancela
+con `POST /api/library/scan/cancel`; estas rutas y las de consulta requieren
+autenticación.
 
 ## Streaming
 

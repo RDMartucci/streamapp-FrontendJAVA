@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate, Link, useSearchParams } from 'react-router-dom'
+import { useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom'
 import { explorerService } from '../services/explorer'
 import { rootsService } from '../services/roots'
 import { ApiClientError } from '../lib/api'
@@ -25,16 +25,18 @@ function cleanDisplayName(raw: string): string {
 
 export function ExplorerPage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
   const [nodes, setNodes] = useState<ExplorerNode[]>([])
   const [configuredRoots, setConfiguredRoots] = useState<string[]>([])
   const [currentPath, setCurrentPath] = useState<string | null>(() => searchParams.get('path'))
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [feedback, setFeedback] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerQuery, setPickerQuery] = useState('')
   const [pickerNode, setPickerNode] = useState<ExplorerNode | null>(null)
   const fetchedPosters = useRef<Set<string>>(new Set())
+  const scrollRestored = useRef(false)
   const navigate = useNavigate()
 
   const setPath = useCallback(
@@ -69,6 +71,13 @@ export function ExplorerPage() {
     fetchedPosters.current.clear()
     void load(currentPath)
   }, [currentPath, load])
+
+  const restoreScrollY = (location.state as { restoreScrollY?: number } | null)?.restoreScrollY
+  useEffect(() => {
+    if (loading || restoreScrollY == null || scrollRestored.current) return
+    scrollRestored.current = true
+    window.requestAnimationFrame(() => window.scrollTo(0, restoreScrollY))
+  }, [loading, restoreScrollY])
 
   useEffect(() => {
     void rootsService.list().then(setConfiguredRoots).catch(() => setConfiguredRoots([]))
@@ -113,6 +122,7 @@ export function ExplorerPage() {
     if (!node.playable) return
     navigate(
       `/detalle?path=${encodeURIComponent(node.path)}&name=${encodeURIComponent(node.name)}&type=${encodeURIComponent(node.mediaType ?? '')}&streamUrl=${encodeURIComponent(node.streamUrl ?? '')}&posterUrl=${encodeURIComponent(node.posterUrl ?? '')}`,
+      { state: { returnTo: `${location.pathname}${location.search}`, returnScrollY: window.scrollY } },
     )
   }
 

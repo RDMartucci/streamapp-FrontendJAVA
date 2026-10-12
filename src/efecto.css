@@ -1,0 +1,22 @@
+@import './index.css';
+
+/* Aplicar el efecto de presionado a todos los botones, enlaces y elementos clicleables */
+a:active,
+button:active,
+input[type="button"]:active,
+input[type="submit"]:active,
+.btn:active {
+  /* Reduce el tamaño ligeramente para simular un botón físico */
+  transform: scale(0.95) !important;
+  
+  /* Quita la sombra o la acerca para dar sensación de profundidad al presionar */
+  filter: brightness(0.9);
+  
+  /* Transición rápida para que el clic se sienta responsivo e instantáneo */
+  transition: transform 0.05s ease-in-out;
+
+  /* Efecto opcional al hacer clic (Active) */
+    .nav-item:active {
+    transform: scale(0.95) rotate(0deg);
+    }
+}
