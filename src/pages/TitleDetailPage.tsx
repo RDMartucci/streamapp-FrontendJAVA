@@ -85,7 +85,7 @@ export function TitleDetailPage() {
 
   const playInVlc = () => {
     if (!streamUrl) return
-    setVlcMsg('Si el navegador lo solicita, confirma la apertura de StreamApp Player.')
+    setVlcMsg('Si el navegador lo solicita, confirma la apertura de SVHome Player.')
     launchVlc(streamUrl, title)
   }
 

@@ -60,7 +60,7 @@ export function PlayerPage() {
 
   const playInVlc = () => {
     launchVlc(src, title)
-    setExternalMsg('Si el navegador lo solicita, confirma la apertura de StreamApp Player.')
+    setExternalMsg('Si el navegador lo solicita, confirma la apertura de SVHome Player.')
   }
 
   const isVideo = type === 'VIDEO'

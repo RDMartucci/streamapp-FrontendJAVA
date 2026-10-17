@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiClientError } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -10,6 +10,14 @@ import type { MediaItemDto } from '../types'
 
 function displayTitle(item: MediaItemDto): string {
   return item.title || item.path.split(/[\\/]/).pop() || item.path
+}
+
+function episodeFilename(item: MediaItemDto): string {
+  return item.path.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, '') || displayTitle(item)
+}
+
+function matchesExactList(value: string | null | undefined, selected: string): boolean {
+  return (value ?? '').split(',').some((entry) => entry.trim().toLocaleLowerCase() === selected.toLocaleLowerCase())
 }
 
 function formatDuration(seconds: number): string {
@@ -30,7 +38,6 @@ export function LibraryPage() {
     return Number.isInteger(value) && value > 0 ? value : 0
   })
   const [totalItems, setTotalItems] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
   const [movieCount, setMovieCount] = useState(0)
   const [seriesCount, setSeriesCount] = useState(0)
   const [audioCount, setAudioCount] = useState(0)
@@ -44,6 +51,7 @@ export function LibraryPage() {
     const value = searchParams.get('filter')
     return value === 'movie' || value === 'series' || value === 'audio' ? value : 'all'
   })
+  const [selectedSeries, setSelectedSeries] = useState(() => searchParams.get('series') ?? '')
   const [filterOptions, setFilterOptions] = useState({
     actors: [] as string[],
     directors: [] as string[],
@@ -79,6 +87,7 @@ export function LibraryPage() {
     if (page > 0) params.set('page', String(page))
     if (query) params.set('query', query)
     if (filter !== 'all') params.set('filter', filter)
+    if (selectedSeries) params.set('series', selectedSeries)
     if (actor) params.set('actor', actor)
     if (director) params.set('director', director)
     if (year) params.set('year', year)
@@ -87,7 +96,7 @@ export function LibraryPage() {
     if (params.toString() !== searchParams.toString()) {
       setSearchParams(params, { replace: true, state: location.state })
     }
-  }, [page, query, filter, actor, director, year, genre, stars, searchParams, setSearchParams, location.state])
+  }, [page, query, filter, selectedSeries, actor, director, year, genre, stars, searchParams, setSearchParams, location.state])
 
   const restoreScrollY = (location.state as { restoreScrollY?: number } | null)?.restoreScrollY
   useEffect(() => {
@@ -100,25 +109,18 @@ export function LibraryPage() {
     setLoading(true)
     setError('')
     try {
-      const result = await libraryService.list(page, 24, query, filter, {
-        actor,
-        director,
-        year,
-        genre,
-        stars,
-      })
-      setItems(result.items)
-      setTotalItems(result.totalItems)
-      setTotalPages(result.totalPages)
-      setMovieCount(result.movieCount)
-      setSeriesCount(result.seriesCount)
-      setAudioCount(result.audioCount)
+      const result = await libraryService.items()
+      setItems(result)
+      setTotalItems(result.length)
+      setMovieCount(result.filter((item) => item.mediaTypeDetail === 'movie').length)
+      setSeriesCount(result.filter((item) => item.mediaTypeDetail === 'series').length)
+      setAudioCount(result.filter((item) => item.mediaType === 'AUDIO').length)
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'No se pudo cargar la biblioteca')
     } finally {
       setLoading(false)
     }
-  }, [page, query, actor, director, year, genre, stars, filter])
+  }, [])
 
   useEffect(() => {
     void load()
@@ -142,6 +144,58 @@ export function LibraryPage() {
     const timer = window.setInterval(updateElapsed, 1000)
     return () => window.clearInterval(timer)
   }, [scanStartedAt])
+
+  const filteredItems = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase()
+    const minimumVote = stars ? (Number(stars) - 0.5) * 2 : null
+    return items.filter((item) => {
+      if (normalizedQuery && !`${displayTitle(item)} ${item.path}`.toLocaleLowerCase().includes(normalizedQuery)) return false
+      if (filter === 'audio' && item.mediaType !== 'AUDIO') return false
+      if (filter === 'movie' && item.mediaTypeDetail !== 'movie') return false
+      if (filter === 'series' && item.mediaTypeDetail !== 'series') return false
+      if (actor && !matchesExactList(item.cast, actor)) return false
+      if (director && !matchesExactList(item.directors, director)) return false
+      if (year && item.year !== Number(year)) return false
+      if (genre && !matchesExactList(item.genres, genre)) return false
+      if (minimumVote !== null && (item.voteAverage == null || item.voteAverage < minimumVote)) return false
+      return true
+    })
+  }, [items, query, filter, actor, director, year, genre, stars])
+
+  const seriesGroups = useMemo(() => {
+    const groups = new Map<string, { title: string; episodes: MediaItemDto[] }>()
+    filteredItems
+      .filter((item) => item.mediaTypeDetail === 'series')
+      .forEach((item) => {
+        const title = displayTitle(item)
+        const key = title.trim().toLocaleLowerCase()
+        const group = groups.get(key) ?? { title, episodes: [] }
+        group.episodes.push(item)
+        groups.set(key, group)
+      })
+    return [...groups.values()].sort((left, right) => left.title.localeCompare(right.title))
+  }, [filteredItems])
+
+  const selectedSeriesGroup = seriesGroups.find(
+    (group) => group.title.toLocaleLowerCase() === selectedSeries.toLocaleLowerCase(),
+  )
+  const standaloneItems = useMemo(
+    () => filteredItems
+      .filter((item) => item.mediaTypeDetail !== 'series')
+      .sort((left, right) => displayTitle(left).localeCompare(displayTitle(right))),
+    [filteredItems],
+  )
+  const visibleEntries = useMemo(() => {
+    if (selectedSeries) return selectedSeriesGroup?.episodes ?? []
+    return standaloneItems
+  }, [selectedSeries, selectedSeriesGroup, standaloneItems])
+  const pageSize = 24
+  const totalPages = Math.ceil(visibleEntries.length / pageSize)
+  const currentEntries = visibleEntries.slice(page * pageSize, (page + 1) * pageSize)
+
+  useEffect(() => {
+    if (totalPages > 0 && page >= totalPages) setPage(totalPages - 1)
+  }, [page, totalPages])
 
   const scan = async () => {
     setScanning(true)
@@ -208,7 +262,7 @@ export function LibraryPage() {
         )
       }
       setPage(0)
-      if (page === 0) await load()
+      await load()
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'No se pudo escanear la biblioteca')
     } finally {
@@ -266,9 +320,8 @@ export function LibraryPage() {
     <div className="page">
       <header className="page-header">
         <div>
-          <div className="eyebrow">STREAMAPP MEDIA SERVER</div>
+          <div className="eyebrow">SVHOME MEDIA SERVER</div>
           <h1>Mi biblioteca</h1>
-          <div className="muted">{totalItems} elementos catalogados para reproducir</div>
         </div>
         <div className="library-scan-actions">
           <button type="button" className="btn btn-primary" onClick={() => void scan()} disabled={scanning}>
@@ -326,6 +379,7 @@ export function LibraryPage() {
           </p>
         </div>
         <div className="library-stats">
+          <div><strong>{totalItems}</strong><span>Catalogados</span></div>
           <div><strong>{movieCount}</strong><span>Películas</span></div>
           <div><strong>{seriesCount}</strong><span>Series</span></div>
           <div><strong>{audioCount}</strong><span>Audio</span></div>
@@ -400,31 +454,99 @@ export function LibraryPage() {
       {filterOptionsError && <div className="alert alert-error">{filterOptionsError}</div>}
       {loading ? (
         <div className="muted">Cargando biblioteca...</div>
-      ) : items.length === 0 ? (
+      ) : currentEntries.length === 0 ? (
         <div className="empty">
-          <p>{!hasSearchFilters ? 'Tu biblioteca todavía está vacía.' : 'No hay resultados para esa búsqueda.'}</p>
-          {!hasSearchFilters && <p className="muted">Configura una raíz y pulsa «Actualizar biblioteca».</p>}
+          {selectedSeries && (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => { setSelectedSeries(''); setPage(0) }}
+            >
+              ← Todas las series
+            </button>
+          )}
+          <p>{items.length === 0 && !hasSearchFilters ? 'Tu biblioteca todavía está vacía.' : 'No hay resultados para esa búsqueda.'}</p>
+          {items.length === 0 && !hasSearchFilters && <p className="muted">Configura una raíz y pulsa «Actualizar biblioteca».</p>}
         </div>
       ) : (
-        <div className="grid">
-          {items.map((item) => (
-            <MediaCard
-              key={item.id}
-              name={displayTitle(item)}
-              displayName={displayTitle(item)}
-              directory={false}
-              playable
-              mediaType={item.mediaType}
-              mediaTypeDetail={item.mediaTypeDetail}
-              posterUrl={item.posterUrl}
-              year={item.year}
-              genres={item.genres}
-              voteAverage={item.voteAverage}
-              onOpen={() => openItem(item)}
-              onChangePoster={() => setPickerItem(item)}
-            />
-          ))}
-        </div>
+        <>
+          {selectedSeries && (
+            <div className="library-selected-series">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => { setSelectedSeries(''); setPage(0) }}
+              >
+                ← Todas las series
+              </button>
+              <h2>{selectedSeriesGroup?.title ?? selectedSeries}</h2>
+              <p className="muted">{selectedSeriesGroup?.episodes.length ?? 0} episodios</p>
+            </div>
+          )}
+          {!selectedSeries && seriesGroups.length > 0 && (
+            <section className="library-series-section" aria-label="Series disponibles">
+              <h2>Series</h2>
+              <div className="grid library-series-grid">
+                {seriesGroups.map((group) => {
+                  const cover = group.episodes.find((episode) => episode.posterUrl) ?? group.episodes[0]
+                  return (
+                    <MediaCard
+                      key={group.title}
+                      name={group.title}
+                      displayName={group.title}
+                      directory={false}
+                      playable
+                      mediaType={cover?.mediaType ?? 'VIDEO'}
+                      mediaTypeDetail="series"
+                      posterUrl={cover?.posterUrl}
+                      year={cover?.year}
+                      genres={cover?.genres}
+                      voteAverage={cover?.voteAverage}
+                      badgeText={`${group.episodes.length} episodios`}
+                      onOpen={() => { setSelectedSeries(group.title); setPage(0) }}
+                    />
+                  )
+                })}
+              </div>
+            </section>
+          )}
+          <div className="grid">
+            {!selectedSeries && currentEntries.map((item) => (
+                <MediaCard
+                  key={item.id}
+                  name={displayTitle(item)}
+                  displayName={displayTitle(item)}
+                  directory={false}
+                  playable
+                  mediaType={item.mediaType}
+                  mediaTypeDetail={item.mediaTypeDetail}
+                  posterUrl={item.posterUrl}
+                  year={item.year}
+                  genres={item.genres}
+                  voteAverage={item.voteAverage}
+                  onOpen={() => openItem(item)}
+                  onChangePoster={() => setPickerItem(item)}
+                />
+            ))}
+            {selectedSeries && currentEntries.map((item) => (
+              <MediaCard
+                key={item.id}
+                name={episodeFilename(item)}
+                displayName={episodeFilename(item)}
+                directory={false}
+                playable
+                mediaType={item.mediaType}
+                mediaTypeDetail={item.mediaTypeDetail}
+                posterUrl={item.posterUrl}
+                year={item.year}
+                genres={item.genres}
+                voteAverage={item.voteAverage}
+                onOpen={() => openItem(item)}
+                onChangePoster={() => setPickerItem(item)}
+              />
+            ))}
+          </div>
+        </>
       )}
       {!loading && totalPages > 1 && (
         <div className="library-pagination">

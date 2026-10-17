@@ -96,9 +96,17 @@ code {
   padding-right: 10px;
 }
 
+.brand-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .brand-logo {
   display: block;
-  width: 180px;
+  width: 92px;
   height: 60px;
   margin-left: 12px;
   flex: 0 1 auto;
@@ -108,10 +116,28 @@ code {
   object-position: center 48%;
 }
 
-.brand-logo-login {
+.brand-name {
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.brand-identity-login {
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.brand-identity-login .brand-logo {
   width: 220px;
   height: 74px;
-  margin: 8px auto 4px;
+  margin: 8px 0 4px;
+}
+
+.brand-identity-login .brand-name {
+  font-size: 22px;
 }
 
 .sidebar-toggle {
@@ -265,10 +291,14 @@ button.user-chip:hover {
 }
 
 .sidebar-collapsed .brand-logo {
-  width: 32px;
+  width: 40px;
   height: 32px;
   margin-left: 6px;
   object-fit: cover;
+}
+
+.sidebar-collapsed .brand-name {
+  display: none;
 }
 
 .sidebar-collapsed .sidebar-toggle {
@@ -347,6 +377,32 @@ button.user-chip:hover {
 
 .library-hero p {
   margin: 0;
+}
+
+.library-series-section {
+  margin: 8px 0 24px;
+}
+
+.library-series-section h2,
+.library-selected-series h2 {
+  margin-bottom: 12px;
+}
+
+.library-series-grid {
+  margin-bottom: 24px;
+}
+
+.library-selected-series {
+  margin: 8px 0 18px;
+}
+
+.library-selected-series .btn {
+  margin-bottom: 16px;
+}
+
+.library-selected-series h2,
+.library-selected-series p {
+  margin-top: 0;
 }
 
 .library-stats {
@@ -1549,15 +1605,15 @@ button.user-chip:hover {
   }
 
   .brand-logo {
-    width: 88px;
+    width: 44px;
     height: 40px;
     margin-left: 0;
   }
 
-  .brand-logo-login {
+  .brand-identity-login .brand-logo {
     width: 220px;
     height: 74px;
-    margin: 8px auto 4px;
+    margin: 8px 0 4px;
   }
 
   .nav {

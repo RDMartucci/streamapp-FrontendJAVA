@@ -12,6 +12,7 @@ interface Props {
   year?: number | null
   genres?: string | null
   voteAverage?: number | null
+  badgeText?: string
   onOpen: () => void
   onChangePoster?: () => void
 }
@@ -27,6 +28,7 @@ export function MediaCard({
   year,
   genres,
   voteAverage,
+  badgeText,
   onOpen,
   onChangePoster,
 }: Props) {
@@ -75,7 +77,7 @@ export function MediaCard({
           <div className="card-icon">{directory ? '📁' : mediaType === 'AUDIO' ? '🎵' : mediaType === 'VIDEO' ? '🎬' : '📄'}</div>
         )}
         <div className="card-title" title={name}>{displayName}</div>
-        {playable && <div className="card-badge">{badge}</div>}
+        {(playable || badgeText) && <div className="card-badge">{badgeText ?? badge}</div>}
       </button>
       {playable && onChangePoster && (
         <button type="button" className="btn btn-ghost btn-sm card-poster-action" onClick={onChangePoster}>

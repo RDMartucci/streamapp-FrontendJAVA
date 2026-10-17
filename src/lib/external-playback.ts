@@ -2,7 +2,7 @@ import { resolveServerUrl } from './api'
 
 export function downloadM3uPlaylist(src: string, title: string): void {
   const safeTitle = title.replace(/[\r\n]/g, ' ')
-  const filename = safeTitle.replace(/[\\/:*?"<>|]/g, '_') || 'streamapp'
+  const filename = safeTitle.replace(/[\\/:*?"<>|]/g, '_') || 'svhome'
   const playlist = `#EXTM3U\n#EXTINF:-1,${safeTitle}\n${resolveServerUrl(src)}\n`
   const url = URL.createObjectURL(new Blob([playlist], { type: 'audio/x-mpegurl' }))
   const link = document.createElement('a')

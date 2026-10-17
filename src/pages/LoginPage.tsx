@@ -43,7 +43,7 @@ export function LoginPage() {
   return (
     <div className="auth-screen">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <BrandLogo className="brand-logo-login" />
+        <BrandLogo className="brand-identity-login" />
         <h1>{mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}</h1>
 
         <label className="field">

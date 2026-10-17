@@ -1,4 +1,4 @@
-# TESTING — Guía para probar StreamApp desde el navegador
+# TESTING — Guía para probar SVHome desde el navegador
 
 Pasos ordenados para probar el frontend (`http://localhost:3000`) y el backend
 (`http://localhost:8080`) sin Postman, desde el navegador.
@@ -88,7 +88,7 @@ Pasos ordenados para probar el frontend (`http://localhost:3000`) y el backend
 
 Para obtener un token sin Postman: loguearse en el front (`localhost:3000`) y
 copiar el token desde DevTools → Application → Local Storage →
-`streamapp_token`.
+`streamapp_token` (clave técnica heredada, mantenida para conservar sesiones).
 
 ## 9. Endpoints públicos (navegador directo)
 
@@ -104,6 +104,8 @@ copiar el token desde DevTools → Application → Local Storage →
 |---|---|
 | Abrir `/` o `/biblioteca` | Se muestra la biblioteca con paginación numérica y filtros |
 | Buscar por título y combinar los filtros de tipo, actor, director, año, género y puntuación | Los desplegables ofrecen opciones del catálogo y los resultados cumplen los filtros seleccionados |
+| Elegir el filtro de series | Se muestran tarjetas con las portadas y nombres de las series, no una lista continua de todos sus capítulos |
+| Pulsar una tarjeta de serie | Se muestran únicamente los capítulos de esa serie; **← Todas las series** vuelve al selector |
 | Avanzar a otra página y abrir un título desde una card | El detalle abre para el título seleccionado |
 | Pulsar **← Volver al explorador** desde el detalle | Regresa a la biblioteca conservando filtros, búsqueda, número de página y posición de desplazamiento |
 | Abrir un detalle desde `/explorador` y volver | Regresa a la misma ruta/carpeta y posición del explorador |

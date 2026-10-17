@@ -1,5 +1,5 @@
 import { api } from '../lib/api'
-import type { LibraryPageDto, LibraryScanResult } from '../types'
+import type { LibraryPageDto, LibraryScanResult, MediaItemDto } from '../types'
 
 export interface LibrarySearchFilters {
   actor: string
@@ -22,6 +22,10 @@ export interface LibraryScanCancelResult {
 }
 
 export const libraryService = {
+  items(): Promise<MediaItemDto[]> {
+    return api.get<MediaItemDto[]>('/library/items')
+  },
+
   filterOptions(): Promise<LibraryFilterOptions> {
     return api.get<LibraryFilterOptions>('/library/filter-options')
   },

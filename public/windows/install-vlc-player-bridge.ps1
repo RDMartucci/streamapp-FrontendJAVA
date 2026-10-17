@@ -57,7 +57,7 @@ function Show-BridgeError([string]$Message) {
         Add-Type -AssemblyName System.Windows.Forms
         [void][System.Windows.Forms.MessageBox]::Show(
             $Message,
-            'StreamApp VLC Player',
+            'SVHome VLC Player',
             [System.Windows.Forms.MessageBoxButtons]::OK,
             [System.Windows.Forms.MessageBoxIcon]::Warning)
     } catch {
@@ -104,14 +104,14 @@ if ($ProtocolUrl) {
         Add-Type -AssemblyName System.Web
         $request = [Uri]$ProtocolUrl
         if ($request.Scheme -ne 'streamapp-player' -or $request.Host -ne 'play') {
-            throw 'El enlace no corresponde al protocolo de StreamApp.'
+            throw 'El enlace no corresponde al protocolo de SVHome.'
         }
 
         $streamUrl = [System.Web.HttpUtility]::ParseQueryString($request.Query).Get('url')
         $title = [System.Web.HttpUtility]::ParseQueryString($request.Query).Get('title')
         $stream = [Uri]$streamUrl
         if ($stream.Scheme -notin @('http', 'https') -or $stream.AbsolutePath -notmatch '^/api/stream/[^/]+$') {
-            throw 'El enlace no es una URL de streaming válida de StreamApp.'
+            throw 'El enlace no es una URL de streaming válida de SVHome.'
         }
 
         $vlc = Find-VlcExecutable
@@ -120,7 +120,7 @@ if ($ProtocolUrl) {
         }
 
         if ([string]::IsNullOrWhiteSpace($title)) {
-            $title = 'StreamApp'
+            $title = 'SVHome'
         }
         $arguments = @("--meta-title=$title", $stream.AbsoluteUri) |
             ForEach-Object { Quote-ProcessArgument $_ }
@@ -142,10 +142,10 @@ Copy-Item -LiteralPath $PSCommandPath -Destination $installedScript -Force
 $powershell = Join-Path $PSHOME 'powershell.exe'
 $command = '"{0}" -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "{1}" "%1"' -f $powershell, $installedScript
 New-Item -Path $protocolKey -Force | Out-Null
-Set-Item -LiteralPath $protocolKey -Value 'URL: StreamApp VLC Player'
+Set-Item -LiteralPath $protocolKey -Value 'URL: SVHome VLC Player'
 New-ItemProperty -LiteralPath $protocolKey -Name 'URL Protocol' -Value '' -PropertyType String -Force | Out-Null
 $commandKey = Join-Path $protocolKey 'shell\open\command'
 New-Item -Path $commandKey -Force | Out-Null
 Set-Item -LiteralPath $commandKey -Value $command
 
-Write-Host 'Puente de VLC instalado para este usuario. Ya puedes volver a StreamApp y pulsar Reproducir en VLC.'
+Write-Host 'Puente de VLC instalado para este usuario. Ya puedes volver a SVHome y pulsar Reproducir en VLC.'

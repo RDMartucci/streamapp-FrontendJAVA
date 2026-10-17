@@ -66,7 +66,7 @@ export function RootsPage() {
       </header>
 
       <p className="muted">
-        Las raíces son las carpetas de tu computadora que StreamApp puede explorar y reproducir.
+        Las raíces son las carpetas de tu computadora que SVHome puede explorar y reproducir.
         Configurá una carpeta para que aparezca en el explorador.
       </p>
 

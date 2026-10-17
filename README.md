@@ -1,6 +1,7 @@
-# StreamApp Frontend
+# SVHome Frontend
 
-App web del backend de streaming local. React 19 + TypeScript + Vite.
+Cliente web de SVHome para explorar y reproducir contenido multimedia desde un
+servidor local. React 19 + TypeScript + Vite.
 Diseñada para reproducir contenido (música y video) en viewport grande.
 
 En producción, Docker construye esta aplicación y el backend la entrega junto
@@ -93,6 +94,12 @@ metadata son desplegables y sus opciones se obtienen del catálogo del usuario
 mediante `GET /api/library/filter-options`; al completar una actualización se
 vuelven a cargar para incluir metadata recién indexada.
 
+Los episodios de series se agrupan en tarjetas con la portada y el nombre de
+cada serie, además de la cantidad de episodios. Al seleccionar una tarjeta, se
+muestran solo sus episodios; la acción para volver a todas las series devuelve
+a la vista agrupada. La búsqueda y los filtros se aplican tanto a las series
+como a sus episodios.
+
 La biblioteca usa paginación de 24 elementos por página y expone la búsqueda,
 los filtros y la página actual en los parámetros de la URL. Al abrir un título
 y volver al listado se conservan esos parámetros y la posición de desplazamiento.
@@ -118,6 +125,11 @@ El explorador y las listas (favoritos/playlists) entregan `streamUrl`
 (p. ej. `/api/stream/{ticket}`). El reproductor apunta la etiqueta
 `<video>`/`<audio>` directamente a esa URL: el navegador emite peticiones
 con `Range`, y el backend responde `206` con `Accept-Ranges: bytes`.
+
+Para conservar sesiones existentes, las claves de almacenamiento local del
+navegador (incluida `streamapp_token`) y el esquema de base de datos todavía usan el prefijo técnico
+`streamapp`. El protocolo local `streamapp-player://` también se conserva para
+que sigan funcionando las instalaciones existentes del puente de VLC.
 
 ## Scripts
 
