@@ -108,6 +108,7 @@ copiar el token desde DevTools → Application → Local Storage →
 | Cambiar de página y abrir un título desde una card | Se abre el detalle; al volver se conservan filtros y página |
 | Sin filtros, usar Anterior/Siguiente, los botones numerados o el control deslizante de una sección | Cada sección pagina de forma independiente en bloques de 12 tarjetas; los números permiten saltar directamente a páginas (con puntos suspensivos si hay muchas), la barra también cambia de página y el encabezado indica el rango visible |
 | Pulsar una tarjeta de serie | Se muestran únicamente los episodios de esa serie; con filtros, se muestran en grilla paginada y sin filtros en una fila horizontal |
+| Abrir un detalle con internet y entrar a **Reparto**, luego desconectar internet y volver a abrirlo | Las fotos descargadas se cargan desde el caché del backend incluso sin internet; los datos del reparto se conservan en la BBDD. Si una persona no tiene foto en TMDB, aparecen sus iniciales |
 | Abrir un título desde una card | El detalle abre para el título seleccionado |
 | Pulsar **← Volver al explorador** desde el detalle | Regresa a la biblioteca conservando filtros, búsqueda, serie seleccionada y posición de desplazamiento |
 | Abrir un detalle desde `/explorador` y volver | Regresa a la misma ruta/carpeta y posición del explorador |

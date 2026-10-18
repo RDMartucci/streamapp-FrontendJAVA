@@ -18,6 +18,12 @@ export interface EpisodeDto {
   voteAverage: number | null
 }
 
+export interface CastMember {
+  name: string
+  character: string
+  profileUrl: string | null
+}
+
 export interface TitleDetail {
   title: string
   titleOriginal: string
@@ -25,6 +31,7 @@ export interface TitleDetail {
   genres: string
   overview: string
   cast: string
+  castMembers?: CastMember[]
   directors: string
   trailerUrl: string
   posterUrl: string | null
@@ -65,6 +72,7 @@ export const titleDetailsService = {
       titleOriginal: detail.titleOriginal ?? '',
       overview: detail.overview ?? '',
       cast: detail.cast ?? '',
+      castMembers: JSON.stringify(detail.castMembers ?? []),
       directors: detail.directors ?? '',
       mediaType: detail.mediaType ?? '',
       backdropUrl: detail.backdropUrl ?? '',
@@ -82,6 +90,7 @@ export const titleDetailsService = {
       voteAverage: detail.voteAverage != null ? String(detail.voteAverage) : '',
       overview: detail.overview,
       cast: detail.cast,
+      castMembers: JSON.stringify(detail.castMembers ?? []),
       directors: detail.directors,
       mediaType: detail.mediaType,
       posterUrl: detail.posterUrl ?? '',

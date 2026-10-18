@@ -1533,6 +1533,8 @@ button.user-chip:hover {
 }
 
 .gnulahd-cast-avatar {
+  position: relative;
+  overflow: hidden;
   width: 72px;
   height: 72px;
   border-radius: 50%;
@@ -1545,9 +1547,23 @@ button.user-chip:hover {
   font-size: 18px;
 }
 
+.gnulahd-cast-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .gnulahd-cast-name {
   font-size: 12px;
   font-weight: 600;
+}
+
+.gnulahd-cast-character {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 11px;
 }
 
 .gnulahd-details {

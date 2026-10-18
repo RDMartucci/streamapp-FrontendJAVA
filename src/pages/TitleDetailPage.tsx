@@ -173,7 +173,13 @@ export function TitleDetailPage() {
   if (error) return <div className="page"><div className="alert alert-error">{error}</div><button className="btn btn-ghost" onClick={handleBack}>← Volver</button></div>
   if (!detail) return null
 
-  const castList = detail.cast ? detail.cast.split(',').map((s) => s.trim()).filter(Boolean) : []
+  const castList = detail.castMembers?.length
+    ? detail.castMembers
+    : (detail.cast ? detail.cast.split(',').map((name) => name.trim()).filter(Boolean).map((name) => ({
+        name,
+        character: '',
+        profileUrl: null,
+      })) : [])
 
   return (
     <div className="page" style={{ maxWidth: '100%', padding: 0 }}>
@@ -302,10 +308,21 @@ export function TitleDetailPage() {
             {castList.length === 0 ? (
               <div className="muted">Sin datos de reparto</div>
             ) : (
-              castList.map((name) => (
-                <div key={name} className="gnulahd-cast-card">
-                  <div className="gnulahd-cast-avatar">{name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</div>
-                  <div className="gnulahd-cast-name">{name}</div>
+              castList.map((member) => (
+                <div key={member.name} className="gnulahd-cast-card">
+                  <div className="gnulahd-cast-avatar">
+                    <span aria-hidden="true">{member.name.split(' ').map((word) => word[0]).slice(0, 2).join('')}</span>
+                    {member.profileUrl && (
+                      <img
+                        src={resolveServerUrl(member.profileUrl)}
+                        alt={`Foto de ${member.name}`}
+                        loading="lazy"
+                        onError={(event) => { event.currentTarget.style.display = 'none' }}
+                      />
+                    )}
+                  </div>
+                  <div className="gnulahd-cast-name">{member.name}</div>
+                  {member.character && <div className="gnulahd-cast-character">{member.character}</div>}
                 </div>
               ))
             )}

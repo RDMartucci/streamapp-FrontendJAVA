@@ -113,6 +113,13 @@ conservan los filtros, la serie seleccionada, la página y la posición de
 desplazamiento. El explorador también conserva la posición al volver desde un
 detalle.
 
+La pestaña **Reparto** muestra la foto de perfil y, cuando está disponible, el
+personaje interpretado por cada integrante del elenco, con datos obtenidos de
+los créditos de TMDB. Al consultar la ficha con conexión, se persisten los
+datos del reparto en la base de datos y las fotos en la caché local del backend.
+Las consultas posteriores pueden mostrar el reparto sin conexión; si TMDB no
+proporciona una foto, se conservan las iniciales.
+
 **Actualizar biblioteca** muestra el estado del proceso, el tiempo transcurrido
 y una barra indeterminada (no representa un porcentaje de avance). Si hay una
 estimación anterior, presenta un tiempo restante aproximado; se calcula con la
