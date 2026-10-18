@@ -102,14 +102,14 @@ export function LibraryPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const [items, setItems] = useState<MediaItemDto[]>([])
+  const [randomSuggestion, setRandomSuggestion] = useState<{
+    entry: LibraryGridEntry
+    filterKey: string
+  } | null>(null)
   const [page, setPage] = useState(() => {
     const value = Number(searchParams.get('page'))
     return Number.isInteger(value) && value > 0 ? value : 0
   })
-  const [totalItems, setTotalItems] = useState(0)
-  const [movieCount, setMovieCount] = useState(0)
-  const [seriesCount, setSeriesCount] = useState(0)
-  const [audioCount, setAudioCount] = useState(0)
   const [query, setQuery] = useState(() => searchParams.get('query') ?? '')
   const [actor, setActor] = useState(() => searchParams.get('actor') ?? '')
   const [director, setDirector] = useState(() => searchParams.get('director') ?? '')
@@ -180,10 +180,6 @@ export function LibraryPage() {
     try {
       const result = await libraryService.items()
       setItems(result)
-      setTotalItems(result.length)
-      setMovieCount(result.filter((item) => item.mediaTypeDetail === 'movie').length)
-      setSeriesCount(result.filter((item) => item.mediaTypeDetail === 'series').length)
-      setAudioCount(result.filter((item) => item.mediaType === 'AUDIO').length)
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'No se pudo cargar la biblioteca')
     } finally {
@@ -265,6 +261,10 @@ export function LibraryPage() {
     [filteredItems],
   )
   const selectedEpisodes = selectedSeriesGroup?.episodes ?? []
+  const heroMovieCount = movieItems.length
+  const heroSeriesCount = selectedSeries ? selectedEpisodes.length : seriesGroups.length
+  const heroAudioCount = audioItems.length
+  const heroCatalogCount = heroMovieCount + heroSeriesCount + heroAudioCount
   const gridEntries = useMemo<LibraryGridEntry[]>(() => {
     if (selectedSeries) {
       return selectedEpisodes.map((item) => ({ kind: 'item', item }))
@@ -289,6 +289,12 @@ export function LibraryPage() {
     page * LIBRARY_PAGE_SIZE,
     (page + 1) * LIBRARY_PAGE_SIZE,
   )
+  const suggestionFilterKey = JSON.stringify([
+    query.trim(), filter, actor, director, year, genre, stars, selectedSeries,
+  ])
+  const currentSuggestion = randomSuggestion?.filterKey === suggestionFilterKey
+    ? randomSuggestion.entry
+    : null
   useEffect(() => {
     if (page >= totalPages && page > 0) setPage(Math.max(0, totalPages - 1))
   }, [page, totalPages])
@@ -413,6 +419,38 @@ export function LibraryPage() {
     )
   }
 
+  const suggestRandomTitle = () => {
+    if (gridEntries.length === 0) return
+    const entry = gridEntries[Math.floor(Math.random() * gridEntries.length)]
+    setRandomSuggestion({ entry, filterKey: suggestionFilterKey })
+  }
+
+  const openSuggestedTitle = (entry: LibraryGridEntry) => {
+    if (entry.kind === 'series') {
+      setPage(0)
+      setSelectedSeries(entry.group.title)
+      return
+    }
+    openItem(entry.item)
+  }
+
+  const suggestedTitle = currentSuggestion
+    ? currentSuggestion.kind === 'series'
+      ? currentSuggestion.group.title
+      : currentSuggestion.item.mediaTypeDetail === 'series'
+        ? episodeFilename(currentSuggestion.item)
+        : displayTitle(currentSuggestion.item)
+    : ''
+  const suggestedDescription = currentSuggestion
+    ? currentSuggestion.kind === 'series'
+      ? `Serie · ${currentSuggestion.group.episodes.length} episodios`
+      : currentSuggestion.item.mediaType === 'AUDIO'
+        ? 'Audio'
+        : currentSuggestion.item.mediaTypeDetail === 'series'
+          ? 'Episodio'
+          : 'Película'
+    : ''
+
   return (
     <div className="page">
       <header className="page-header">
@@ -421,6 +459,16 @@ export function LibraryPage() {
           <h1>Mi biblioteca</h1>
         </div>
         <div className="library-scan-actions">
+          <button
+            type="button"
+            className="btn btn-ghost library-random-button"
+            onClick={suggestRandomTitle}
+            disabled={loading || scanning || gridEntries.length === 0}
+            title="Sugerir un título al azar entre los resultados actuales"
+          >
+            🎲 Sorpréndeme
+          </button>
+          <span className="library-scan-divider" aria-hidden="true" />
           <button type="button" className="btn btn-primary" onClick={() => void scan()} disabled={scanning}>
             {scanning ? 'Escaneando...' : 'Actualizar biblioteca'}
           </button>
@@ -476,10 +524,10 @@ export function LibraryPage() {
           </p>
         </div>
         <div className="library-stats">
-          <div><strong>{totalItems}</strong><span>Catalogados</span></div>
-          <div><strong>{movieCount}</strong><span>Películas</span></div>
-          <div><strong>{seriesCount}</strong><span>Series</span></div>
-          <div><strong>{audioCount}</strong><span>Audio</span></div>
+          <div><strong>{heroCatalogCount}</strong><span>Catalogados</span></div>
+          <div><strong>{heroMovieCount}</strong><span>Películas</span></div>
+          <div><strong>{heroSeriesCount}</strong><span>{selectedSeries ? 'Episodios' : 'Series'}</span></div>
+          <div><strong>{heroAudioCount}</strong><span>Audio</span></div>
         </div>
       </section>
 
@@ -553,6 +601,41 @@ export function LibraryPage() {
           ))}
         </select>
       </div>
+
+      {currentSuggestion && (
+        <section className="library-random-suggestion" aria-live="polite">
+          <div>
+            <span className="library-random-eyebrow">Sugerencia al azar</span>
+            <h2>{suggestedTitle}</h2>
+            <span className="muted">{suggestedDescription}</span>
+          </div>
+          <div className="library-random-actions">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => openSuggestedTitle(currentSuggestion)}
+            >
+              {currentSuggestion.kind === 'series' ? 'Ver serie' : 'Abrir título'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={suggestRandomTitle}
+            >
+              Otra sugerencia
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost library-suggestion-dismiss"
+              onClick={() => setRandomSuggestion(null)}
+              aria-label="Cerrar sugerencia"
+              title="Cerrar sugerencia"
+            >
+              ✕
+            </button>
+          </div>
+        </section>
+      )}
 
       {feedback && <div className="alert alert-info">{feedback}</div>}
       {error && <div className="alert alert-error">{error}</div>}

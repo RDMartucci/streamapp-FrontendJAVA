@@ -93,6 +93,13 @@ contenido, actor, director, año, género y puntuación mínima. Los filtros de
 metadata son desplegables y sus opciones se obtienen del catálogo del usuario
 mediante `GET /api/library/filter-options`; al completar una actualización se
 vuelven a cargar para incluir metadata recién indexada.
+Las cantidades del hero se recalculan con los resultados de los filtros
+aplicados; las series se cuentan por tarjeta de serie y, al seleccionar una,
+se informa el número de episodios mostrados.
+El botón **Sorpréndeme**, junto a **Actualizar biblioteca** y separado
+visualmente, sugiere al azar un resultado de la selección filtrada completa,
+independientemente de la página actual. Desde la sugerencia se puede abrir el
+título o entrar a la serie correspondiente.
 
 Los episodios de series se agrupan en tarjetas con la portada y el nombre de
 cada serie, además de la cantidad de episodios. Al seleccionar una tarjeta, se
