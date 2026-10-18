@@ -192,6 +192,9 @@ export function LibraryPage() {
   const pageSize = 24
   const totalPages = Math.ceil(visibleEntries.length / pageSize)
   const currentEntries = visibleEntries.slice(page * pageSize, (page + 1) * pageSize)
+  const hasVisibleResults = selectedSeries
+    ? currentEntries.length > 0
+    : seriesGroups.length > 0 || currentEntries.length > 0
 
   useEffect(() => {
     if (totalPages > 0 && page >= totalPages) setPage(totalPages - 1)
@@ -454,7 +457,7 @@ export function LibraryPage() {
       {filterOptionsError && <div className="alert alert-error">{filterOptionsError}</div>}
       {loading ? (
         <div className="muted">Cargando biblioteca...</div>
-      ) : currentEntries.length === 0 ? (
+      ) : !hasVisibleResults ? (
         <div className="empty">
           {selectedSeries && (
             <button
