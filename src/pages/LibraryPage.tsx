@@ -6,7 +6,19 @@ import { libraryService } from '../services/library'
 import { titleDetailsService } from '../services/title-details'
 import { PosterPickerModal } from '../components/PosterPickerModal'
 import { MediaCard } from '../components/MediaCard'
+import { MediaCarousel } from '../components/MediaCarousel'
 import type { MediaItemDto } from '../types'
+
+const LIBRARY_PAGE_SIZE = 24
+
+interface SeriesGroup {
+  title: string
+  episodes: MediaItemDto[]
+}
+
+type LibraryGridEntry =
+  | { kind: 'series'; group: SeriesGroup }
+  | { kind: 'item'; item: MediaItemDto }
 
 function displayTitle(item: MediaItemDto): string {
   return item.title || item.path.split(/[\\/]/).pop() || item.path
@@ -25,6 +37,63 @@ function formatDuration(seconds: number): string {
   const minutes = Math.floor(seconds / 60)
   const remainingSeconds = seconds % 60
   return remainingSeconds === 0 ? `${minutes} min` : `${minutes} min ${remainingSeconds} s`
+}
+
+function LibraryPagination({
+  page,
+  totalItems,
+  onPageChange,
+}: {
+  page: number
+  totalItems: number
+  onPageChange: (nextPage: number) => void
+}) {
+  const totalPages = Math.ceil(totalItems / LIBRARY_PAGE_SIZE)
+  if (totalPages <= 1) return null
+
+  const firstPage = Math.max(0, Math.min(page - 2, totalPages - 5))
+  const pageNumbers = Array.from(
+    { length: Math.min(totalPages, 5) },
+    (_, index) => firstPage + index,
+  )
+
+  return (
+    <nav className="library-pagination" aria-label="Paginación de resultados">
+      <button
+        type="button"
+        className="btn btn-ghost"
+        disabled={page === 0}
+        onClick={() => onPageChange(page - 1)}
+      >
+        Anterior
+      </button>
+      <div className="library-page-numbers">
+        {pageNumbers.map((pageNumber) => (
+          <button
+            key={pageNumber}
+            type="button"
+            className={`btn ${pageNumber === page ? 'btn-primary' : 'btn-ghost'}`}
+            aria-label={`Ir a la página ${pageNumber + 1}`}
+            aria-current={pageNumber === page ? 'page' : undefined}
+            onClick={() => onPageChange(pageNumber)}
+          >
+            {pageNumber + 1}
+          </button>
+        ))}
+      </div>
+      <span className="muted">
+        {page * LIBRARY_PAGE_SIZE + 1}–{Math.min((page + 1) * LIBRARY_PAGE_SIZE, totalItems)} de {totalItems}
+      </span>
+      <button
+        type="button"
+        className="btn btn-ghost"
+        disabled={page + 1 >= totalPages}
+        onClick={() => onPageChange(page + 1)}
+      >
+        Siguiente
+      </button>
+    </nav>
+  )
 }
 
 export function LibraryPage() {
@@ -162,6 +231,10 @@ export function LibraryPage() {
     })
   }, [items, query, filter, actor, director, year, genre, stars])
 
+  const hasSearchFilters = Boolean(
+    query.trim() || actor.trim() || director.trim() || year || genre.trim() || stars || filter !== 'all',
+  )
+
   const seriesGroups = useMemo(() => {
     const groups = new Map<string, { title: string; episodes: MediaItemDto[] }>()
     filteredItems
@@ -179,26 +252,52 @@ export function LibraryPage() {
   const selectedSeriesGroup = seriesGroups.find(
     (group) => group.title.toLocaleLowerCase() === selectedSeries.toLocaleLowerCase(),
   )
-  const standaloneItems = useMemo(
+  const movieItems = useMemo(
     () => filteredItems
-      .filter((item) => item.mediaTypeDetail !== 'series')
+      .filter((item) => item.mediaTypeDetail === 'movie')
       .sort((left, right) => displayTitle(left).localeCompare(displayTitle(right))),
     [filteredItems],
   )
-  const visibleEntries = useMemo(() => {
-    if (selectedSeries) return selectedSeriesGroup?.episodes ?? []
-    return standaloneItems
-  }, [selectedSeries, selectedSeriesGroup, standaloneItems])
-  const pageSize = 24
-  const totalPages = Math.ceil(visibleEntries.length / pageSize)
-  const currentEntries = visibleEntries.slice(page * pageSize, (page + 1) * pageSize)
-  const hasVisibleResults = selectedSeries
-    ? currentEntries.length > 0
-    : seriesGroups.length > 0 || currentEntries.length > 0
-
+  const audioItems = useMemo(
+    () => filteredItems
+      .filter((item) => item.mediaType === 'AUDIO')
+      .sort((left, right) => displayTitle(left).localeCompare(displayTitle(right))),
+    [filteredItems],
+  )
+  const selectedEpisodes = selectedSeriesGroup?.episodes ?? []
+  const gridEntries = useMemo<LibraryGridEntry[]>(() => {
+    if (selectedSeries) {
+      return selectedEpisodes.map((item) => ({ kind: 'item', item }))
+    }
+    const entries: LibraryGridEntry[] = []
+    if (filter === 'all' || filter === 'series') {
+      entries.push(...seriesGroups.map((group) => ({ kind: 'series' as const, group })))
+    }
+    entries.push(
+      ...filteredItems
+        .filter((item) => item.mediaTypeDetail !== 'series')
+        .map((item) => ({ kind: 'item' as const, item })),
+    )
+    return entries.sort((left, right) => {
+      const leftTitle = left.kind === 'series' ? left.group.title : displayTitle(left.item)
+      const rightTitle = right.kind === 'series' ? right.group.title : displayTitle(right.item)
+      return leftTitle.localeCompare(rightTitle)
+    })
+  }, [selectedSeries, selectedEpisodes, filter, seriesGroups, filteredItems])
+  const totalPages = Math.ceil(gridEntries.length / LIBRARY_PAGE_SIZE)
+  const currentGridEntries = gridEntries.slice(
+    page * LIBRARY_PAGE_SIZE,
+    (page + 1) * LIBRARY_PAGE_SIZE,
+  )
   useEffect(() => {
-    if (totalPages > 0 && page >= totalPages) setPage(totalPages - 1)
+    if (page >= totalPages && page > 0) setPage(Math.max(0, totalPages - 1))
   }, [page, totalPages])
+
+  const hasVisibleResults = selectedSeries
+    ? selectedEpisodes.length > 0
+    : hasSearchFilters
+      ? filteredItems.length > 0
+      : movieItems.length > 0 || seriesGroups.length > 0 || audioItems.length > 0
 
   const scan = async () => {
     setScanning(true)
@@ -264,7 +363,6 @@ export function LibraryPage() {
           err instanceof ApiClientError ? err.message : 'No se pudieron actualizar las opciones de búsqueda',
         )
       }
-      setPage(0)
       await load()
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'No se pudo escanear la biblioteca')
@@ -314,10 +412,6 @@ export function LibraryPage() {
       { state: { returnTo: `${location.pathname}${location.search}`, returnScrollY: window.scrollY } },
     )
   }
-
-  const hasSearchFilters = Boolean(
-    query.trim() || actor.trim() || director.trim() || year || genre.trim() || stars || filter !== 'all',
-  )
 
   return (
     <div className="page">
@@ -397,7 +491,15 @@ export function LibraryPage() {
           placeholder="Buscar películas, series o archivos..."
           aria-label="Buscar en la biblioteca"
         />
-        <select className="input library-filter" value={filter} onChange={(event) => { setPage(0); setFilter(event.target.value as typeof filter) }}>
+        <select
+          className="input library-filter"
+          value={filter}
+          onChange={(event) => {
+            setPage(0)
+            setFilter(event.target.value as typeof filter)
+            setSelectedSeries('')
+          }}
+        >
           <option value="all">Todo</option>
           <option value="movie">Películas</option>
           <option value="series">Series</option>
@@ -463,7 +565,7 @@ export function LibraryPage() {
             <button
               type="button"
               className="btn btn-ghost"
-              onClick={() => { setSelectedSeries(''); setPage(0) }}
+              onClick={() => setSelectedSeries('')}
             >
               ← Todas las series
             </button>
@@ -478,106 +580,194 @@ export function LibraryPage() {
               <button
                 type="button"
                 className="btn btn-ghost"
-                onClick={() => { setSelectedSeries(''); setPage(0) }}
+                onClick={() => setSelectedSeries('')}
               >
                 ← Todas las series
               </button>
               <h2>{selectedSeriesGroup?.title ?? selectedSeries}</h2>
-              <p className="muted">{selectedSeriesGroup?.episodes.length ?? 0} episodios</p>
-            </div>
-          )}
-          {!selectedSeries && seriesGroups.length > 0 && (
-            <section className="library-series-section" aria-label="Series disponibles">
-              <h2>Series</h2>
-              <div className="grid library-series-grid">
-                {seriesGroups.map((group) => {
-                  const cover = group.episodes.find((episode) => episode.posterUrl) ?? group.episodes[0]
-                  return (
+              <p className="muted">{selectedEpisodes.length} episodios</p>
+              {hasSearchFilters ? (
+                <>
+                  <div className="grid">
+                    {currentGridEntries.map((entry) => entry.kind === 'item' && (
                     <MediaCard
-                      key={group.title}
-                      name={group.title}
-                      displayName={group.title}
+                      key={entry.item.id}
+                      name={episodeFilename(entry.item)}
+                      displayName={episodeFilename(entry.item)}
                       directory={false}
                       playable
-                      mediaType={cover?.mediaType ?? 'VIDEO'}
-                      mediaTypeDetail="series"
-                      posterUrl={cover?.posterUrl}
-                      year={cover?.year}
-                      genres={cover?.genres}
-                      voteAverage={cover?.voteAverage}
-                      badgeText={`${group.episodes.length} episodios`}
-                      onOpen={() => { setSelectedSeries(group.title); setPage(0) }}
+                      mediaType={entry.item.mediaType}
+                      mediaTypeDetail={entry.item.mediaTypeDetail}
+                      posterUrl={entry.item.posterUrl}
+                      year={entry.item.year}
+                      genres={entry.item.genres}
+                      voteAverage={entry.item.voteAverage}
+                      onOpen={() => openItem(entry.item)}
+                      onChangePoster={() => setPickerItem(entry.item)}
                     />
-                  )
-                })}
-              </div>
-            </section>
+                    ))}
+                  </div>
+                  <LibraryPagination
+                    page={page}
+                    totalItems={gridEntries.length}
+                    onPageChange={setPage}
+                  />
+                </>
+              ) : (
+                <MediaCarousel title="Episodios" count={selectedEpisodes.length}>
+                  {selectedEpisodes.map((item) => (
+                  <MediaCard
+                    key={item.id}
+                    name={episodeFilename(item)}
+                    displayName={episodeFilename(item)}
+                    directory={false}
+                    playable
+                    mediaType={item.mediaType}
+                    mediaTypeDetail={item.mediaTypeDetail}
+                    posterUrl={item.posterUrl}
+                    year={item.year}
+                    genres={item.genres}
+                    voteAverage={item.voteAverage}
+                    onOpen={() => openItem(item)}
+                    onChangePoster={() => setPickerItem(item)}
+                  />
+                  ))}
+                </MediaCarousel>
+              )}
+            </div>
           )}
-          <div className="grid">
-            {!selectedSeries && currentEntries.map((item) => (
-                <MediaCard
-                  key={item.id}
-                  name={displayTitle(item)}
-                  displayName={displayTitle(item)}
-                  directory={false}
-                  playable
-                  mediaType={item.mediaType}
-                  mediaTypeDetail={item.mediaTypeDetail}
-                  posterUrl={item.posterUrl}
-                  year={item.year}
-                  genres={item.genres}
-                  voteAverage={item.voteAverage}
-                  onOpen={() => openItem(item)}
-                  onChangePoster={() => setPickerItem(item)}
+          {!selectedSeries && (
+            hasSearchFilters ? (
+              <section className="library-filtered-results" aria-label="Resultados filtrados">
+                <h2>
+                  {filter === 'movie'
+                    ? 'Películas'
+                    : filter === 'series'
+                      ? 'Series'
+                      : filter === 'audio'
+                        ? 'Audio'
+                        : 'Resultados de búsqueda'}
+                </h2>
+                <div className="grid">
+                  {currentGridEntries.map((entry) => {
+                    if (entry.kind === 'series') {
+                      const cover = entry.group.episodes.find((episode) => episode.posterUrl) ?? entry.group.episodes[0]
+                      return (
+                        <MediaCard
+                          key={entry.group.title}
+                          name={entry.group.title}
+                          displayName={entry.group.title}
+                          directory={false}
+                          playable
+                          mediaType={cover?.mediaType ?? 'VIDEO'}
+                          mediaTypeDetail="series"
+                          posterUrl={cover?.posterUrl}
+                          year={cover?.year}
+                          genres={cover?.genres}
+                          voteAverage={cover?.voteAverage}
+                          badgeText={`${entry.group.episodes.length} episodios`}
+                          onOpen={() => { setPage(0); setSelectedSeries(entry.group.title) }}
+                        />
+                      )
+                    }
+                    const item = entry.item
+                    return (
+                    <MediaCard
+                      key={item.id}
+                      name={displayTitle(item)}
+                      displayName={displayTitle(item)}
+                      directory={false}
+                      playable
+                      mediaType={item.mediaType}
+                      mediaTypeDetail={item.mediaTypeDetail}
+                      posterUrl={item.posterUrl}
+                      year={item.year}
+                      genres={item.genres}
+                      voteAverage={item.voteAverage}
+                      onOpen={() => openItem(item)}
+                      onChangePoster={() => setPickerItem(item)}
+                    />
+                    )
+                  })}
+                </div>
+                <LibraryPagination
+                  page={page}
+                  totalItems={gridEntries.length}
+                  onPageChange={setPage}
                 />
-            ))}
-            {selectedSeries && currentEntries.map((item) => (
-              <MediaCard
-                key={item.id}
-                name={episodeFilename(item)}
-                displayName={episodeFilename(item)}
-                directory={false}
-                playable
-                mediaType={item.mediaType}
-                mediaTypeDetail={item.mediaTypeDetail}
-                posterUrl={item.posterUrl}
-                year={item.year}
-                genres={item.genres}
-                voteAverage={item.voteAverage}
-                onOpen={() => openItem(item)}
-                onChangePoster={() => setPickerItem(item)}
-              />
-            ))}
-          </div>
+              </section>
+            ) : (
+              <div className="library-media-rows">
+                {movieItems.length > 0 && (
+                  <MediaCarousel title="Películas" count={movieItems.length}>
+                    {movieItems.map((item) => (
+                      <MediaCard
+                        key={item.id}
+                        name={displayTitle(item)}
+                        displayName={displayTitle(item)}
+                        directory={false}
+                        playable
+                        mediaType={item.mediaType}
+                        mediaTypeDetail={item.mediaTypeDetail}
+                        posterUrl={item.posterUrl}
+                        year={item.year}
+                        genres={item.genres}
+                        voteAverage={item.voteAverage}
+                        onOpen={() => openItem(item)}
+                        onChangePoster={() => setPickerItem(item)}
+                      />
+                    ))}
+                  </MediaCarousel>
+                )}
+                {seriesGroups.length > 0 && (
+                  <MediaCarousel title="Series" count={seriesGroups.length}>
+                    {seriesGroups.map((group) => {
+                      const cover = group.episodes.find((episode) => episode.posterUrl) ?? group.episodes[0]
+                      return (
+                        <MediaCard
+                          key={group.title}
+                          name={group.title}
+                          displayName={group.title}
+                          directory={false}
+                          playable
+                          mediaType={cover?.mediaType ?? 'VIDEO'}
+                          mediaTypeDetail="series"
+                          posterUrl={cover?.posterUrl}
+                          year={cover?.year}
+                          genres={cover?.genres}
+                          voteAverage={cover?.voteAverage}
+                          badgeText={`${group.episodes.length} episodios`}
+                          onOpen={() => setSelectedSeries(group.title)}
+                        />
+                      )
+                    })}
+                  </MediaCarousel>
+                )}
+                {audioItems.length > 0 && (
+                  <MediaCarousel title="Audio" count={audioItems.length}>
+                    {audioItems.map((item) => (
+                      <MediaCard
+                        key={item.id}
+                        name={displayTitle(item)}
+                        displayName={displayTitle(item)}
+                        directory={false}
+                        playable
+                        mediaType={item.mediaType}
+                        mediaTypeDetail={item.mediaTypeDetail}
+                        posterUrl={item.posterUrl}
+                        year={item.year}
+                        genres={item.genres}
+                        voteAverage={item.voteAverage}
+                        onOpen={() => openItem(item)}
+                        onChangePoster={() => setPickerItem(item)}
+                      />
+                    ))}
+                  </MediaCarousel>
+                )}
+              </div>
+            )
+          )}
         </>
-      )}
-      {!loading && totalPages > 1 && (
-        <div className="library-pagination">
-          <button type="button" className="btn btn-ghost" disabled={page === 0} onClick={() => setPage((value) => value - 1)}>
-            Anterior
-          </button>
-          <div className="library-page-numbers" aria-label="Páginas de la biblioteca">
-            {Array.from(
-              { length: Math.min(totalPages, 5) },
-              (_, index) => Math.max(0, Math.min(page - 2, totalPages - 5)) + index,
-            ).map((pageNumber) => (
-              <button
-                key={pageNumber}
-                type="button"
-                className={`btn ${pageNumber === page ? 'btn-primary' : 'btn-ghost'}`}
-                aria-label={`Ir a la página ${pageNumber + 1}`}
-                aria-current={pageNumber === page ? 'page' : undefined}
-                onClick={() => setPage(pageNumber)}
-              >
-                {pageNumber + 1}
-              </button>
-            ))}
-          </div>
-          <span className="muted">Página {page + 1} de {totalPages}</span>
-          <button type="button" className="btn btn-ghost" disabled={page + 1 >= totalPages} onClick={() => setPage((value) => value + 1)}>
-            Siguiente
-          </button>
-        </div>
       )}
       {pickerItem && (
         <PosterPickerModal

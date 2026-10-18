@@ -102,12 +102,14 @@ copiar el token desde DevTools → Application → Local Storage →
 
 | Qué hacer | Qué esperar |
 |---|---|
-| Abrir `/` o `/biblioteca` | Se muestra la biblioteca con paginación numérica y filtros |
-| Buscar por título y combinar los filtros de tipo, actor, director, año, género y puntuación | Los desplegables ofrecen opciones del catálogo y los resultados cumplen los filtros seleccionados |
-| Elegir el filtro de series | Se muestran tarjetas con las portadas y nombres de las series, no una lista continua de todos sus capítulos |
-| Pulsar una tarjeta de serie | Se muestran únicamente los capítulos de esa serie; **← Todas las series** vuelve al selector |
-| Avanzar a otra página y abrir un título desde una card | El detalle abre para el título seleccionado |
-| Pulsar **← Volver al explorador** desde el detalle | Regresa a la biblioteca conservando filtros, búsqueda, número de página y posición de desplazamiento |
+| Abrir `/` o `/biblioteca` | Se muestran secciones separadas de Películas, Series y Audio con filas horizontales |
+| Elegir Películas, Series o Audio en el desplegable de tipo (`library-filter`) | Los resultados del tipo elegido se muestran como grilla paginada |
+| Buscar por título o combinar cualquier filtro de tipo, actor, director, año, género y puntuación | Los resultados coincidentes se muestran en una grilla paginada de 24 elementos |
+| Cambiar de página y abrir un título desde una card | Se abre el detalle; al volver se conservan filtros y página |
+| Sin filtros, usar Anterior/Siguiente, los botones numerados o el control deslizante de una sección | Cada sección pagina de forma independiente en bloques de 12 tarjetas; los números permiten saltar directamente a páginas (con puntos suspensivos si hay muchas), la barra también cambia de página y el encabezado indica el rango visible |
+| Pulsar una tarjeta de serie | Se muestran únicamente los episodios de esa serie; con filtros, se muestran en grilla paginada y sin filtros en una fila horizontal |
+| Abrir un título desde una card | El detalle abre para el título seleccionado |
+| Pulsar **← Volver al explorador** desde el detalle | Regresa a la biblioteca conservando filtros, búsqueda, serie seleccionada y posición de desplazamiento |
 | Abrir un detalle desde `/explorador` y volver | Regresa a la misma ruta/carpeta y posición del explorador |
 | Pulsar **Actualizar biblioteca** | Se muestra el estado activo, tiempo transcurrido y barra indeterminada; una estimación aparece si hay historial local de duración |
 | Pulsar **Cancelar actualización** durante el escaneo | El escaneo se detiene cooperativamente y se conservan los elementos procesados antes de cancelar |

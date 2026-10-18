@@ -100,10 +100,18 @@ muestran solo sus episodios; la acción para volver a todas las series devuelve
 a la vista agrupada. La búsqueda y los filtros se aplican tanto a las series
 como a sus episodios.
 
-La biblioteca usa paginación de 24 elementos por página y expone la búsqueda,
-los filtros y la página actual en los parámetros de la URL. Al abrir un título
-y volver al listado se conservan esos parámetros y la posición de desplazamiento.
-El explorador también conserva la posición al volver desde un detalle.
+La biblioteca presenta películas, series y audio en secciones independientes,
+cada una con una fila horizontal desplazable y flechas laterales cuando hay más
+tarjetas fuera de vista. Cada sección se pagina independientemente, en bloques
+de 12 tarjetas, con controles anterior/siguiente, botones numerados para ir
+directamente a una página y un control deslizante en el encabezado (o desplazarse
+horizontalmente cuando la sección solo tiene una página). Se indica el rango de títulos de la página y
+cuáles están visibles en la fila. Al aplicar cualquier búsqueda o filtro, los resultados se muestran
+en una grilla paginada de 24 elementos. La búsqueda, los filtros y la página actual se
+exponen en los parámetros de la URL. Al abrir un título y volver al listado se
+conservan los filtros, la serie seleccionada, la página y la posición de
+desplazamiento. El explorador también conserva la posición al volver desde un
+detalle.
 
 **Actualizar biblioteca** muestra el estado del proceso, el tiempo transcurrido
 y una barra indeterminada (no representa un porcentaje de avance). Si hay una
