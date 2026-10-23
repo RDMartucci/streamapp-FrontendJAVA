@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiClientError } from '../lib/api'
+import { parentDirectory } from '../lib/media-path'
+import { getRootColorForPath } from '../lib/root-colors'
 import { useAuth } from '../lib/auth'
 import { libraryService } from '../services/library'
+import { rootsService } from '../services/roots'
 import { titleDetailsService } from '../services/title-details'
 import { PosterPickerModal } from '../components/PosterPickerModal'
 import { MediaCard } from '../components/MediaCard'
@@ -102,6 +105,8 @@ export function LibraryPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const [items, setItems] = useState<MediaItemDto[]>([])
+  const [roots, setRoots] = useState<string[]>([])
+  const [rootsError, setRootsError] = useState('')
   const [randomSuggestion, setRandomSuggestion] = useState<{
     entry: LibraryGridEntry
     filterKey: string
@@ -190,6 +195,17 @@ export function LibraryPage() {
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    void rootsService.list()
+      .then((configuredRoots) => {
+        setRoots(configuredRoots)
+        setRootsError('')
+      })
+      .catch((err) => setRootsError(
+        err instanceof ApiClientError ? err.message : 'No se pudieron cargar las raíces para identificar la fuente',
+      ))
+  }, [])
 
   useEffect(() => {
     void libraryService.filterOptions()
@@ -419,6 +435,14 @@ export function LibraryPage() {
     )
   }
 
+  const openSourceInExplorer = (path: string) => {
+    const directory = parentDirectory(path)
+    if (!directory) return
+    navigate(`/explorador?path=${encodeURIComponent(directory)}`, {
+      state: { returnTo: `${location.pathname}${location.search}`, returnScrollY: window.scrollY },
+    })
+  }
+
   const suggestRandomTitle = () => {
     if (gridEntries.length === 0) return
     const entry = gridEntries[Math.floor(Math.random() * gridEntries.length)]
@@ -484,6 +508,38 @@ export function LibraryPage() {
           )}
         </div>
       </header>
+
+      <nav className="breadcrumbs" aria-label="Ruta de navegación">
+        <button
+          type="button"
+          className="crumb"
+          onClick={() => {
+            setSelectedSeries('')
+            setPage(0)
+          }}
+        >
+          Inicio
+        </button>
+        <span className="crumb-sep">/</span>
+        {selectedSeries ? (
+          <>
+            <button
+              type="button"
+              className="crumb"
+              onClick={() => {
+                setSelectedSeries('')
+                setPage(0)
+              }}
+            >
+              Biblioteca
+            </button>
+            <span className="crumb-sep">/</span>
+            <span aria-current="page">{selectedSeriesGroup?.title ?? selectedSeries}</span>
+          </>
+        ) : (
+          <span aria-current="page">Biblioteca</span>
+        )}
+      </nav>
 
       {scanning && (
         <section className="library-scan-status" role="status" aria-live="polite">
@@ -639,6 +695,7 @@ export function LibraryPage() {
 
       {feedback && <div className="alert alert-info">{feedback}</div>}
       {error && <div className="alert alert-error">{error}</div>}
+      {rootsError && <div className="alert alert-error">{rootsError}</div>}
       {filterOptionsError && <div className="alert alert-error">{filterOptionsError}</div>}
       {loading ? (
         <div className="muted">Cargando biblioteca...</div>
@@ -685,6 +742,9 @@ export function LibraryPage() {
                       year={entry.item.year}
                       genres={entry.item.genres}
                       voteAverage={entry.item.voteAverage}
+                      sourcePath={entry.item.path}
+                      sourceColor={getRootColorForPath(entry.item.path, roots)}
+                      onOpenSource={() => openSourceInExplorer(entry.item.path)}
                       onOpen={() => openItem(entry.item)}
                       onChangePoster={() => setPickerItem(entry.item)}
                     />
@@ -711,6 +771,9 @@ export function LibraryPage() {
                     year={item.year}
                     genres={item.genres}
                     voteAverage={item.voteAverage}
+                    sourcePath={item.path}
+                    sourceColor={getRootColorForPath(item.path, roots)}
+                    onOpenSource={() => openSourceInExplorer(item.path)}
                     onOpen={() => openItem(item)}
                     onChangePoster={() => setPickerItem(item)}
                   />
@@ -748,6 +811,9 @@ export function LibraryPage() {
                           year={cover?.year}
                           genres={cover?.genres}
                           voteAverage={cover?.voteAverage}
+                          sourcePath={cover?.path}
+                          sourceColor={cover ? getRootColorForPath(cover.path, roots) : undefined}
+                          onOpenSource={cover ? () => openSourceInExplorer(cover.path) : undefined}
                           badgeText={`${entry.group.episodes.length} episodios`}
                           onOpen={() => { setPage(0); setSelectedSeries(entry.group.title) }}
                         />
@@ -767,6 +833,9 @@ export function LibraryPage() {
                       year={item.year}
                       genres={item.genres}
                       voteAverage={item.voteAverage}
+                      sourcePath={item.path}
+                      sourceColor={getRootColorForPath(item.path, roots)}
+                      onOpenSource={() => openSourceInExplorer(item.path)}
                       onOpen={() => openItem(item)}
                       onChangePoster={() => setPickerItem(item)}
                     />
@@ -796,6 +865,9 @@ export function LibraryPage() {
                         year={item.year}
                         genres={item.genres}
                         voteAverage={item.voteAverage}
+                        sourcePath={item.path}
+                        sourceColor={getRootColorForPath(item.path, roots)}
+                        onOpenSource={() => openSourceInExplorer(item.path)}
                         onOpen={() => openItem(item)}
                         onChangePoster={() => setPickerItem(item)}
                       />
@@ -819,6 +891,9 @@ export function LibraryPage() {
                           year={cover?.year}
                           genres={cover?.genres}
                           voteAverage={cover?.voteAverage}
+                          sourcePath={cover?.path}
+                          sourceColor={cover ? getRootColorForPath(cover.path, roots) : undefined}
+                          onOpenSource={cover ? () => openSourceInExplorer(cover.path) : undefined}
                           badgeText={`${group.episodes.length} episodios`}
                           onOpen={() => setSelectedSeries(group.title)}
                         />
@@ -841,6 +916,9 @@ export function LibraryPage() {
                         year={item.year}
                         genres={item.genres}
                         voteAverage={item.voteAverage}
+                        sourcePath={item.path}
+                        sourceColor={getRootColorForPath(item.path, roots)}
+                        onOpenSource={() => openSourceInExplorer(item.path)}
                         onOpen={() => openItem(item)}
                         onChangePoster={() => setPickerItem(item)}
                       />

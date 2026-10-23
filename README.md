@@ -118,7 +118,12 @@ en una grilla paginada de 24 elementos. La búsqueda, los filtros y la página a
 exponen en los parámetros de la URL. Al abrir un título y volver al listado se
 conservan los filtros, la serie seleccionada, la página y la posición de
 desplazamiento. El explorador también conserva la posición al volver desde un
-detalle.
+detalle. La biblioteca muestra breadcrumbs con la ruta Inicio / Biblioteca y
+agrega el nombre de la serie seleccionada como último nivel; Biblioteca permite
+regresar a la vista general de secciones.
+Las cards de archivos muestran su ruta de origen en un apartado **Fuente** con
+un botón para abrir esa carpeta en el explorador interno. Las cards de series
+usan como fuente la ubicación de uno de sus episodios.
 
 La pestaña **Reparto** muestra la foto de perfil y, cuando está disponible, el
 personaje interpretado por cada integrante del elenco, con datos obtenidos de
@@ -126,6 +131,8 @@ los créditos de TMDB. Al consultar la ficha con conexión, se persisten los
 datos del reparto en la base de datos y las fotos en la caché local del backend.
 Las consultas posteriores pueden mostrar el reparto sin conexión; si TMDB no
 proporciona una foto, se conservan las iniciales.
+La ficha también muestra la ruta del archivo de origen junto a la acción de
+editar metadata y permite abrir su carpeta desde el explorador interno.
 
 **Actualizar biblioteca** muestra el estado del proceso, el tiempo transcurrido
 y una barra indeterminada (no representa un porcentaje de avance). Si hay una

@@ -4,6 +4,7 @@ import { titleDetailsService, type TitleDetail, type EpisodeDto } from '../servi
 import { favoritesService } from '../services/favorites'
 import { ApiClientError, resolveServerUrl } from '../lib/api'
 import { downloadM3uPlaylist, launchVlc } from '../lib/external-playback'
+import { parentDirectory } from '../lib/media-path'
 import { PosterPickerModal } from '../components/PosterPickerModal'
 
 function formatRuntime(min: number | null): string {
@@ -116,6 +117,17 @@ export function TitleDetailPage() {
     }
   }
 
+  const openSourceInExplorer = () => {
+    const directory = parentDirectory(rawPath)
+    if (!directory) return
+    navigate(`/explorador?path=${encodeURIComponent(directory)}`, {
+      state: {
+        returnTo: `${location.pathname}${location.search}`,
+        returnScrollY: window.scrollY,
+      },
+    })
+  }
+
   const addFavorite = async () => {
     if (!rawPath) return
     setFavMsg('')
@@ -186,6 +198,7 @@ export function TitleDetailPage() {
       {/* Backdrop */}
       {backdropSrc && <div className="gnulahd-backdrop" style={{ backgroundImage: `url(${backdropSrc})` }} />}
       <div className="gnulahd-content">
+        {detailImageSrc ? <img src={detailImageSrc} alt={title} className="detail-poster" /> : <div className="detail-poster detail-poster-placeholder">🎬</div>}
         {/* <button type="button" className="btn btn-ghost" onClick={handleBack} style={{ margin: '12px 0' }}>
           ← Volver al explorador
         </button> */}
@@ -200,15 +213,15 @@ export function TitleDetailPage() {
         </button>
 
         {/* Breadcrumb + original title */}
-        <div className="muted" style={{ fontSize: 13 }}>
+        {/*<div className="muted" style={{ fontSize: 13 }}>
           {detail.mediaType === 'movie' ? 'Película' : 'Serie'} · {year ?? ''} {detail.titleOriginal && detail.titleOriginal !== title && `· ${detail.titleOriginal}`}
-        </div>
-        {detail.titleOriginal && detail.titleOriginal !== title && (
+        </div>*/}
+        {/*detail.titleOriginal && detail.titleOriginal !== title && (
           <div className="muted" style={{ fontSize: 14, marginBottom: 4 }}>{detail.titleOriginal}</div>
-        )}
+        )*/}
 
 
-          {detailImageSrc ? <img src={detailImageSrc} alt={title} className="detail-poster" /> : <div className="detail-poster detail-poster-placeholder">🎬</div>}
+          
           <div className="detail-hero-gradient gnrd-fi-info">
             <div className="detail-hero-content">
               <h1 className="detail-title" style={{ fontSize: 60, lineHeight: 1.8, maxWidth: 920, color: '#fff' }}>{title}</h1>
@@ -238,7 +251,7 @@ export function TitleDetailPage() {
 
         <div className="detail-info" style={{ marginTop: 0 }}>
           {detail.overview && (
-            <p className="detail-overview gnrd-fi-syn clamp" style={{ maxWidth: 920 }}>
+            <p className="detail-overview gnrd-fi-syn" style={{ maxWidth: 920 }}>
               {showFullOverview || detail.overview.length < 220 ? detail.overview : detail.overview.slice(0, 220) + '...'}
               {detail.overview.length >= 220 && (
                 <button type="button" className="btn btn-ghost" style={{ padding: '2px 6px', marginLeft: 6, fontSize: 12 }} onClick={() => setShowFullOverview((v) => !v)}>
@@ -259,21 +272,37 @@ export function TitleDetailPage() {
                 ▶ Reproducir en VLC
               </button>
             )}
-            {streamUrl && (
+            {/* streamUrl && (
               <button type="button" className="btn btn-ghost" onClick={downloadForVlc}>
                 Descargar M3U
               </button>
-            )}
+            )*/}
             <button type="button" className="btn" onClick={() => void addFavorite()}>
               ♥ Favorito
             </button>
-            <button type="button" className="btn" disabled>
+            {/* <button type="button" className="btn" disabled>
               ＋ Mi lista
-            </button>
+            </button> */}
             {hasTrailer && (
               <button type="button" className="btn" onClick={() => setShowTrailer(true)}>▶ Trailer</button>
             )}
             <button type="button" className="btn" onClick={openEditor}>✎ Editar metadata</button>
+            {rawPath && (
+              <div className="detail-source">
+                <div className="detail-source-path">
+                  <span>Fuente</span>
+                  <strong title={rawPath}>{rawPath}</strong>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={openSourceInExplorer}
+                  disabled={!parentDirectory(rawPath)}
+                >
+                  Abrir en explorador
+                </button>
+              </div>
+            )}
             {favMsg && <span className="player-fav-msg">{favMsg}</span>}
             {vlcMsg && <span className="player-fav-msg">{vlcMsg}</span>}
             {metadataMsg && <span className="player-fav-msg">{metadataMsg}</span>}

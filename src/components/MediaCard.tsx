@@ -13,6 +13,9 @@ interface Props {
   genres?: string | null
   voteAverage?: number | null
   badgeText?: string
+  sourcePath?: string
+  sourceColor?: string
+  onOpenSource?: () => void
   onOpen: () => void
   onChangePoster?: () => void
 }
@@ -29,6 +32,9 @@ export function MediaCard({
   genres,
   voteAverage,
   badgeText,
+  sourcePath,
+  sourceColor,
+  onOpenSource,
   onOpen,
   onChangePoster,
 }: Props) {
@@ -79,10 +85,26 @@ export function MediaCard({
         <div className="card-title" title={name}>{displayName}</div>
         {(playable || badgeText) && <div className="card-badge">{badgeText ?? badge}</div>}
       </button>
+      {playable && sourcePath && onOpenSource && (
+        <div className="detail-source card-detail-source" style={sourceColor ? { borderColor: sourceColor } : undefined}>
+          <div className="detail-source-path">
+            <span style={sourceColor ? { color: sourceColor } : undefined}>Fuente</span>
+          </div>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={onOpenSource}
+            title="Abrir la carpeta de origen en el explorador"
+          >
+            Abrir carpeta
+          </button>
+        </div>
+      )}
       {playable && onChangePoster && (
         <button type="button" className="btn btn-ghost btn-sm card-poster-action" onClick={onChangePoster}>
           🖼 Cambiar poster
         </button>
+        
       )}
     </div>
   )

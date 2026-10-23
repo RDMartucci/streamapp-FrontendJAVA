@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { rootsService } from '../services/roots'
 import { ApiClientError } from '../lib/api'
 import { FileBrowserModal } from '../components/FileBrowserModal'
+import { getRootColor } from '../lib/root-colors'
 
 export function RootsPage() {
   const [roots, setRoots] = useState<string[]>([])
@@ -99,8 +100,8 @@ export function RootsPage() {
           <div className="muted">Aún no configuraste ninguna raíz.</div>
         ) : (
           <div className="list">
-            {roots.map((root) => (
-              <div key={root} className="list-row">
+            {roots.map((root, index) => (
+              <div key={root} className="list-row" style={{ borderLeftColor: getRootColor(index), borderLeftWidth: 4 }}>
                 <span className="list-icon">📁</span>
                 <span className="list-title">{root}</span>
                 <button type="button" className="btn btn-danger" onClick={() => void removeRoot(root)} disabled={busy}>

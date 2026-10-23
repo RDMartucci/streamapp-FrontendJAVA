@@ -3,9 +3,11 @@ import { useNavigate, Link, useLocation, useSearchParams } from 'react-router-do
 import { explorerService } from '../services/explorer'
 import { rootsService } from '../services/roots'
 import { ApiClientError } from '../lib/api'
+import { parentDirectory } from '../lib/media-path'
 import { titleDetailsService } from '../services/title-details'
 import { PosterPickerModal } from '../components/PosterPickerModal'
 import { MediaCard } from '../components/MediaCard'
+import { getRootColorForPath } from '../lib/root-colors'
 import type { ExplorerNode } from '../types'
 
 function cleanDisplayName(raw: string): string {
@@ -80,7 +82,12 @@ export function ExplorerPage() {
   }, [loading, restoreScrollY])
 
   useEffect(() => {
-    void rootsService.list().then(setConfiguredRoots).catch(() => setConfiguredRoots([]))
+    void rootsService.list()
+      .then(setConfiguredRoots)
+      .catch((err) => {
+        setConfiguredRoots([])
+        setError(err instanceof ApiClientError ? err.message : 'No se pudieron cargar las raíces')
+      })
   }, [])
 
   // Carga automática de posters + metadatos sin sobrescribir selecciones manuales existentes.
@@ -226,6 +233,12 @@ export function ExplorerPage() {
               year={node.year}
               genres={node.genres}
               voteAverage={node.voteAverage}
+              sourcePath={node.playable ? node.path : undefined}
+              sourceColor={node.playable ? getRootColorForPath(node.path, configuredRoots) : undefined}
+              onOpenSource={node.playable && parentDirectory(node.path) ? () => {
+                const directory = parentDirectory(node.path)
+                if (directory) setPath(directory)
+              } : undefined}
               onOpen={() => (node.directory ? openFolder(node) : openDetail(node))}
               onChangePoster={node.playable ? () => {
                 setPickerNode(node)

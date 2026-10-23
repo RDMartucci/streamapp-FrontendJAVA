@@ -19,7 +19,7 @@ export function BrandLogo({ className = '' }: Props) {
 
   return (
     <div className={identityClass}>
-      <video
+      {/*<video
         className="brand-logo"
         autoPlay
         loop
@@ -30,7 +30,7 @@ export function BrandLogo({ className = '' }: Props) {
         onError={() => setVideoFailed(true)}
       >
         <source src="/logo%20videoteca.mp4" type="video/mp4" />
-      </video>
+      </video> */}
       <span className="brand-name">SVHome</span>
     </div>
   )

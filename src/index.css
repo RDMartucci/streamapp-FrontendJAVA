@@ -53,6 +53,8 @@ h2 {
 button {
   font: inherit;
   cursor: pointer;
+  border: none;
+  border-radius: 15px;
 }
 
 a {
@@ -810,7 +812,7 @@ button.user-chip:hover {
 /* ---------- Hero ---------- */
 .gnrd-fi-hero {
     position: relative;
-    min-height: 78vh;
+    min-height: 40vh;
     display: flex;
     align-items: flex-end;
     overflow: hidden;
@@ -1565,6 +1567,7 @@ button.user-chip:hover {
   gap: 8px;
   margin-top: 20px;
   border-bottom: 1px solid var(--border);
+  padding-left: 20px;
 }
 
 .gnulahd-tab {
@@ -1586,7 +1589,7 @@ button.user-chip:hover {
   display: flex;
   gap: 14px;
   overflow-x: auto;
-  padding: 14px 0;
+  padding: 14px 20px;
 }
 
 .gnulahd-cast-card {
@@ -1650,7 +1653,7 @@ button.user-chip:hover {
   position: absolute;
   inset: 0;
   width: 100%;
-  height: 100%;
+  height: 78vh;
   object-fit: fill;
   display: block;
 }
@@ -1658,7 +1661,7 @@ button.user-chip:hover {
 .detail-hero-gradient {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to right, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.72) 38%, rgba(0, 0, 0, 0.35) 100%, transparent 100%);
+    background: linear-gradient(to bottom, var(--bg-elevated) 20%, transparent 100%);
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -1699,7 +1702,8 @@ button.user-chip:hover {
     flex-direction: column;
     gap: 12px;
     position: relative;
-    top: -127px;
+    top: 0px;
+    /*height: 38vh;*/
     padding: 24px;
     left: 0;
     background: linear-gradient(to top, var(--bg-elevated) 20%, transparent 100%);
@@ -1754,12 +1758,68 @@ button.user-chip:hover {
 .detail-overview {
   line-height: 1.6;
   color: var(--text);
+  font-size: larger;
+  max-height: 120px;
+  overflow-y: auto;
 }
 
 .detail-actions {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 8px;
+}
+
+.detail-source {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: min(100%, 560px);
+  margin-left: 8px;
+  padding: 6px 8px 6px 12px;
+  border-left: 1px solid var(--border);
+  border-radius: 0 8px 8px 0;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.detail-source-path {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.detail-source-path span {
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.detail-source-path strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-detail-source {
+  width: 100%;
+  max-width: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.card-detail-source > button {
+  align-self: flex-start;
 }
 
 .detail-seasons {
