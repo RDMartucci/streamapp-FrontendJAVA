@@ -12,8 +12,6 @@ import { MediaCard } from '../components/MediaCard'
 import { MediaCarousel } from '../components/MediaCarousel'
 import type { MediaItemDto } from '../types'
 
-const LIBRARY_PAGE_SIZE = 24
-
 interface SeriesGroup {
   title: string
   episodes: MediaItemDto[]
@@ -42,63 +40,6 @@ function formatDuration(seconds: number): string {
   return remainingSeconds === 0 ? `${minutes} min` : `${minutes} min ${remainingSeconds} s`
 }
 
-function LibraryPagination({
-  page,
-  totalItems,
-  onPageChange,
-}: {
-  page: number
-  totalItems: number
-  onPageChange: (nextPage: number) => void
-}) {
-  const totalPages = Math.ceil(totalItems / LIBRARY_PAGE_SIZE)
-  if (totalPages <= 1) return null
-
-  const firstPage = Math.max(0, Math.min(page - 2, totalPages - 5))
-  const pageNumbers = Array.from(
-    { length: Math.min(totalPages, 5) },
-    (_, index) => firstPage + index,
-  )
-
-  return (
-    <nav className="library-pagination" aria-label="Paginación de resultados">
-      <button
-        type="button"
-        className="btn btn-ghost"
-        disabled={page === 0}
-        onClick={() => onPageChange(page - 1)}
-      >
-        Anterior
-      </button>
-      <div className="library-page-numbers">
-        {pageNumbers.map((pageNumber) => (
-          <button
-            key={pageNumber}
-            type="button"
-            className={`btn ${pageNumber === page ? 'btn-primary' : 'btn-ghost'}`}
-            aria-label={`Ir a la página ${pageNumber + 1}`}
-            aria-current={pageNumber === page ? 'page' : undefined}
-            onClick={() => onPageChange(pageNumber)}
-          >
-            {pageNumber + 1}
-          </button>
-        ))}
-      </div>
-      <span className="muted">
-        {page * LIBRARY_PAGE_SIZE + 1}–{Math.min((page + 1) * LIBRARY_PAGE_SIZE, totalItems)} de {totalItems}
-      </span>
-      <button
-        type="button"
-        className="btn btn-ghost"
-        disabled={page + 1 >= totalPages}
-        onClick={() => onPageChange(page + 1)}
-      >
-        Siguiente
-      </button>
-    </nav>
-  )
-}
-
 export function LibraryPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -111,10 +52,6 @@ export function LibraryPage() {
     entry: LibraryGridEntry
     filterKey: string
   } | null>(null)
-  const [page, setPage] = useState(() => {
-    const value = Number(searchParams.get('page'))
-    return Number.isInteger(value) && value > 0 ? value : 0
-  })
   const [query, setQuery] = useState(() => searchParams.get('query') ?? '')
   const [actor, setActor] = useState(() => searchParams.get('actor') ?? '')
   const [director, setDirector] = useState(() => searchParams.get('director') ?? '')
@@ -158,7 +95,6 @@ export function LibraryPage() {
 
   useEffect(() => {
     const params = new URLSearchParams()
-    if (page > 0) params.set('page', String(page))
     if (query) params.set('query', query)
     if (filter !== 'all') params.set('filter', filter)
     if (selectedSeries) params.set('series', selectedSeries)
@@ -170,7 +106,7 @@ export function LibraryPage() {
     if (params.toString() !== searchParams.toString()) {
       setSearchParams(params, { replace: true, state: location.state })
     }
-  }, [page, query, filter, selectedSeries, actor, director, year, genre, stars, searchParams, setSearchParams, location.state])
+  }, [query, filter, selectedSeries, actor, director, year, genre, stars, searchParams, setSearchParams, location.state])
 
   const restoreScrollY = (location.state as { restoreScrollY?: number } | null)?.restoreScrollY
   useEffect(() => {
@@ -300,21 +236,12 @@ export function LibraryPage() {
       return leftTitle.localeCompare(rightTitle)
     })
   }, [selectedSeries, selectedEpisodes, filter, seriesGroups, filteredItems])
-  const totalPages = Math.ceil(gridEntries.length / LIBRARY_PAGE_SIZE)
-  const currentGridEntries = gridEntries.slice(
-    page * LIBRARY_PAGE_SIZE,
-    (page + 1) * LIBRARY_PAGE_SIZE,
-  )
   const suggestionFilterKey = JSON.stringify([
     query.trim(), filter, actor, director, year, genre, stars, selectedSeries,
   ])
   const currentSuggestion = randomSuggestion?.filterKey === suggestionFilterKey
     ? randomSuggestion.entry
     : null
-  useEffect(() => {
-    if (page >= totalPages && page > 0) setPage(Math.max(0, totalPages - 1))
-  }, [page, totalPages])
-
   const hasVisibleResults = selectedSeries
     ? selectedEpisodes.length > 0
     : hasSearchFilters
@@ -335,8 +262,8 @@ export function LibraryPage() {
     try {
       let catalogTitles: number | null = null
       try {
-        const catalog = await libraryService.list(0, 1)
-        catalogTitles = catalog.totalItems
+        const catalog = await libraryService.items()
+        catalogTitles = catalog.length
       } catch {
         setScanEstimateTitles(0)
       }
@@ -451,7 +378,6 @@ export function LibraryPage() {
 
   const openSuggestedTitle = (entry: LibraryGridEntry) => {
     if (entry.kind === 'series') {
-      setPage(0)
       setSelectedSeries(entry.group.title)
       return
     }
@@ -516,7 +442,6 @@ export function LibraryPage() {
           className="crumb"
           onClick={() => {
             setSelectedSeries('')
-            setPage(0)
           }}
         >
           Inicio
@@ -529,7 +454,6 @@ export function LibraryPage() {
               className="crumb"
               onClick={() => {
                 setSelectedSeries('')
-                setPage(0)
               }}
             >
               Biblioteca
@@ -602,7 +526,7 @@ export function LibraryPage() {
         <input
           className="input library-title-search"
           value={query}
-          onChange={(event) => { setPage(0); setQuery(event.target.value) }}
+          onChange={(event) => setQuery(event.target.value)}
           placeholder="Buscar películas, series o archivos..."
           aria-label="Buscar en la biblioteca"
         />
@@ -610,7 +534,6 @@ export function LibraryPage() {
           className="input library-filter"
           value={filter}
           onChange={(event) => {
-            setPage(0)
             setFilter(event.target.value as typeof filter)
             setSelectedSeries('')
           }}
@@ -623,7 +546,7 @@ export function LibraryPage() {
         <select
           className="input"
           value={actor}
-          onChange={(event) => { setPage(0); setActor(event.target.value) }}
+          onChange={(event) => setActor(event.target.value)}
           aria-label="Filtrar por actor"
         >
           <option value="">Todos los actores</option>
@@ -632,7 +555,7 @@ export function LibraryPage() {
         <select
           className="input"
           value={director}
-          onChange={(event) => { setPage(0); setDirector(event.target.value) }}
+          onChange={(event) => setDirector(event.target.value)}
           aria-label="Filtrar por director"
         >
           <option value="">Todos los directores</option>
@@ -641,7 +564,7 @@ export function LibraryPage() {
         <select
           className="input"
           value={year}
-          onChange={(event) => { setPage(0); setYear(event.target.value) }}
+          onChange={(event) => setYear(event.target.value)}
           aria-label="Filtrar por año"
         >
           <option value="">Todos los años</option>
@@ -650,7 +573,7 @@ export function LibraryPage() {
         <select
           className="input"
           value={genre}
-          onChange={(event) => { setPage(0); setGenre(event.target.value) }}
+          onChange={(event) => setGenre(event.target.value)}
           aria-label="Filtrar por género"
         >
           <option value="">Todos los géneros</option>
@@ -659,7 +582,7 @@ export function LibraryPage() {
         <select
           className="input"
           value={stars}
-          onChange={(event) => { setPage(0); setStars(event.target.value) }}
+          onChange={(event) => setStars(event.target.value)}
           aria-label="Filtrar por estrellas mínimas"
         >
           <option value="">Cualquier puntuación</option>
@@ -736,7 +659,7 @@ export function LibraryPage() {
               {hasSearchFilters ? (
                 <>
                   <div className="grid">
-                    {currentGridEntries.map((entry) => entry.kind === 'item' && (
+                    {gridEntries.map((entry) => entry.kind === 'item' && (
                     <MediaCard
                       key={entry.item.id}
                       name={episodeFilename(entry.item)}
@@ -757,11 +680,6 @@ export function LibraryPage() {
                     />
                     ))}
                   </div>
-                  <LibraryPagination
-                    page={page}
-                    totalItems={gridEntries.length}
-                    onPageChange={setPage}
-                  />
                 </>
               ) : (
                 <MediaCarousel title="Episodios" count={selectedEpisodes.length}>
@@ -802,7 +720,7 @@ export function LibraryPage() {
                         : 'Resultados de búsqueda'}
                 </h2>
                 <div className="grid">
-                  {currentGridEntries.map((entry) => {
+                  {gridEntries.map((entry) => {
                     if (entry.kind === 'series') {
                       const cover = entry.group.episodes.find((episode) => episode.posterUrl) ?? entry.group.episodes[0]
                       return (
@@ -822,7 +740,7 @@ export function LibraryPage() {
                           sourceColor={cover ? getRootColorForPath(cover.path, roots) : undefined}
                           onOpenSource={cover ? () => openSourceInExplorer(cover.path) : undefined}
                           badgeText={`${entry.group.episodes.length} episodios`}
-                          onOpen={() => { setPage(0); setSelectedSeries(entry.group.title) }}
+                          onOpen={() => setSelectedSeries(entry.group.title)}
                         />
                       )
                     }
@@ -849,16 +767,15 @@ export function LibraryPage() {
                     )
                   })}
                 </div>
-                <LibraryPagination
-                  page={page}
-                  totalItems={gridEntries.length}
-                  onPageChange={setPage}
-                />
               </section>
             ) : (
               <div className="library-media-rows">
                 {movieItems.length > 0 && (
-                  <MediaCarousel title="Películas" count={movieItems.length}>
+                  <MediaCarousel
+                    title="Películas"
+                    count={movieItems.length}
+                    onShowAll={() => setFilter('movie')}
+                  >
                     {movieItems.map((item) => (
                       <MediaCard
                         key={item.id}
@@ -882,7 +799,11 @@ export function LibraryPage() {
                   </MediaCarousel>
                 )}
                 {seriesGroups.length > 0 && (
-                  <MediaCarousel title="Series" count={seriesGroups.length}>
+                  <MediaCarousel
+                    title="Series"
+                    count={seriesGroups.length}
+                    onShowAll={() => setFilter('series')}
+                  >
                     {seriesGroups.map((group) => {
                       const cover = group.episodes.find((episode) => episode.posterUrl) ?? group.episodes[0]
                       return (
@@ -909,7 +830,11 @@ export function LibraryPage() {
                   </MediaCarousel>
                 )}
                 {audioItems.length > 0 && (
-                  <MediaCarousel title="Audio" count={audioItems.length}>
+                  <MediaCarousel
+                    title="Audio"
+                    count={audioItems.length}
+                    onShowAll={() => setFilter('audio')}
+                  >
                     {audioItems.map((item) => (
                       <MediaCard
                         key={item.id}
