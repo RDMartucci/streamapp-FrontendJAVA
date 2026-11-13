@@ -474,6 +474,7 @@ export function LibraryPage() {
           ? 'Episodio'
           : 'Película'
     : ''
+  const hasLibraryStatus = Boolean(scanning || feedback || error || rootsError || filterOptionsError)
 
   return (
     <div className="page">
@@ -541,34 +542,44 @@ export function LibraryPage() {
         )}
       </nav>
 
-      {scanning && (
-        <section className="library-scan-status" role="status" aria-live="polite">
+      {hasLibraryStatus && (
+        <section className={`library-scan-status${error || rootsError || filterOptionsError ? ' has-error' : ''}`} role="status" aria-live="polite">
           <div className="library-scan-status-copy">
-            <strong>Actualizando biblioteca</strong>
-            <span>Escaneando las fuentes y preparando los filtros. Esto puede tardar unos minutos.</span>
-            <span className="library-scan-elapsed">Tiempo transcurrido: {scanElapsedSeconds} s</span>
-            {scanCanceling && <span className="library-scan-cancel-message">Se está deteniendo el escaneo. Los cambios ya aplicados se conservarán.</span>}
-            {scanEtaSeconds === null ? (
-              <span>No hay datos suficientes para estimar esta actualización.</span>
-            ) : scanElapsedSeconds >= scanEtaSeconds ? (
-              <span className="library-scan-eta">Se superó la estimación inicial; el escaneo sigue activo.</span>
-            ) : (
-              <span className="library-scan-eta">
-                Tiempo restante estimado: ~{formatDuration(scanEtaSeconds - scanElapsedSeconds)}
-                {' · '}finalización aprox. {new Date(Date.now() + (scanEtaSeconds - scanElapsedSeconds) * 1000)
-                  .toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                {' · '}calculado sobre {scanEstimateTitles} títulos
-              </span>
+            {scanning && (
+              <>
+                <strong>Actualizando biblioteca</strong>
+                <span>Escaneando las fuentes y preparando los filtros. Esto puede tardar unos minutos.</span>
+                <span className="library-scan-elapsed">Tiempo transcurrido: {scanElapsedSeconds} s</span>
+                {scanCanceling && <span className="library-scan-cancel-message">Se está deteniendo el escaneo. Los cambios ya aplicados se conservarán.</span>}
+                {scanEtaSeconds === null ? (
+                  <span>No hay datos suficientes para estimar esta actualización.</span>
+                ) : scanElapsedSeconds >= scanEtaSeconds ? (
+                  <span className="library-scan-eta">Se superó la estimación inicial; el escaneo sigue activo.</span>
+                ) : (
+                  <span className="library-scan-eta">
+                    Tiempo restante estimado: ~{formatDuration(scanEtaSeconds - scanElapsedSeconds)}
+                    {' · '}finalización aprox. {new Date(Date.now() + (scanEtaSeconds - scanElapsedSeconds) * 1000)
+                      .toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                    {' · '}calculado sobre {scanEstimateTitles} títulos
+                  </span>
+                )}
+              </>
             )}
+            {feedback && <span className="library-scan-message">{feedback}</span>}
+            {error && <span className="library-scan-message is-error" role="alert">{error}</span>}
+            {rootsError && <span className="library-scan-message is-error" role="alert">{rootsError}</span>}
+            {filterOptionsError && <span className="library-scan-message is-error" role="alert">{filterOptionsError}</span>}
           </div>
-          <div
-            className="library-scan-progress"
-            role="progressbar"
-            aria-label="Actualización de la biblioteca en curso"
-            aria-valuetext={`Proceso en curso, ${scanElapsedSeconds} segundos transcurridos`}
-          >
-            <span />
-          </div>
+          {scanning && (
+            <div
+              className="library-scan-progress"
+              role="progressbar"
+              aria-label="Actualización de la biblioteca en curso"
+              aria-valuetext={`Proceso en curso, ${scanElapsedSeconds} segundos transcurridos`}
+            >
+              <span />
+            </div>
+          )}
         </section>
       )}
 
@@ -693,10 +704,6 @@ export function LibraryPage() {
         </section>
       )}
 
-      {feedback && <div className="alert alert-info">{feedback}</div>}
-      {error && <div className="alert alert-error">{error}</div>}
-      {rootsError && <div className="alert alert-error">{rootsError}</div>}
-      {filterOptionsError && <div className="alert alert-error">{filterOptionsError}</div>}
       {loading ? (
         <div className="muted">Cargando biblioteca...</div>
       ) : !hasVisibleResults ? (

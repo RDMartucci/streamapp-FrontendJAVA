@@ -121,9 +121,12 @@ desplazamiento. El explorador también conserva la posición al volver desde un
 detalle. La biblioteca muestra breadcrumbs con la ruta Inicio / Biblioteca y
 agrega el nombre de la serie seleccionada como último nivel; Biblioteca permite
 regresar a la vista general de secciones.
-Las cards de archivos muestran su ruta de origen en un apartado **Fuente** con
-un botón para abrir esa carpeta en el explorador interno. Las cards de series
-usan como fuente la ubicación de uno de sus episodios.
+Las cards identifican la raíz de cada archivo con una etiqueta **Fuente** cuyo
+color coincide con el de esa raíz en **Mis raíces**. Se asignan hasta cinco
+colores según el orden de las raíces configuradas. La card no muestra la ruta
+completa; el botón **Abrir carpeta** sigue navegando a la ubicación del archivo
+en el explorador interno. Las cards de series usan como fuente la raíz de uno
+de sus episodios.
 
 La pestaña **Reparto** muestra la foto de perfil y, cuando está disponible, el
 personaje interpretado por cada integrante del elenco, con datos obtenidos de
@@ -131,16 +134,22 @@ los créditos de TMDB. Al consultar la ficha con conexión, se persisten los
 datos del reparto en la base de datos y las fotos en la caché local del backend.
 Las consultas posteriores pueden mostrar el reparto sin conexión; si TMDB no
 proporciona una foto, se conservan las iniciales.
-La ficha también muestra la ruta del archivo de origen junto a la acción de
-editar metadata y permite abrir su carpeta desde el explorador interno.
+La ficha muestra la ruta del archivo de origen junto a la acción de editar
+metadata y permite abrir su carpeta desde el explorador interno. Los cambios
+guardados con **Editar metadata** se leen desde el catálogo al volver a abrir la
+ficha y se conservan durante las actualizaciones de biblioteca.
 
 **Actualizar biblioteca** muestra el estado del proceso, el tiempo transcurrido
 y una barra indeterminada (no representa un porcentaje de avance). Si hay una
 estimación anterior, presenta un tiempo restante aproximado; se calcula con la
 duración media por título guardada localmente en el navegador y separada por
-usuario. Durante el escaneo se puede solicitar la cancelación. El proceso
-comprueba la solicitud entre operaciones y puede interrumpir consultas de
-metadata a TMDB; los elementos ya indexados o actualizados se conservan.
+usuario. Los mensajes de estado, finalización y errores de la biblioteca se
+muestran en el mismo panel `library-scan-status`. Durante el escaneo se puede
+solicitar la cancelación. El proceso comprueba la solicitud entre operaciones
+y puede interrumpir consultas de metadata a TMDB; los elementos ya indexados o
+actualizados se conservan. Al completar un escaneo de una raíz accesible, los
+archivos multimedia que ya no existen se quitan del catálogo, favoritos y
+playlists; las raíces inaccesibles y los escaneos cancelados no se depuran.
 
 La API de biblioteca usa `GET /api/library` para resultados paginados. Acepta
 `page`, `size`, `q` (título), `type`, `actor`, `director`, `year`, `genre` y

@@ -100,12 +100,6 @@ export function MediaCard({
           </button>
         </div>
       )}
-      {playable && onChangePoster && (
-        <button type="button" className="btn btn-ghost btn-sm card-poster-action" onClick={onChangePoster}>
-          🖼 Cambiar poster
-        </button>
-        
-      )}
     </div>
   )
 }

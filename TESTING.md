@@ -109,14 +109,19 @@ copiar el token desde DevTools → Application → Local Storage →
 | Aplicar o quitar filtros, o seleccionar una serie | Las cantidades del hero se actualizan con los elementos representados en la vista actual; las series se cuentan como tarjetas de serie y, dentro de una serie seleccionada, se muestra el total de episodios |
 | Pulsar **Sorpréndeme** con o sin filtros | Aparece una sugerencia aleatoria dentro de todos los resultados coincidentes, incluso si pertenece a otra página; se puede abrir el título, ver la serie o pedir otra sugerencia |
 | Cambiar de página y abrir un título desde una card | Se abre el detalle; al volver se conservan filtros y página |
-| Revisar una card de película, episodio, serie o audio y pulsar **Abrir carpeta** en **Fuente** | La card muestra la ruta de origen y el explorador interno abre la carpeta correspondiente |
+| Revisar cards de archivos que pertenezcan a distintas raíces | La etiqueta **Fuente** tiene un color distinto por raíz, acorde al orden de **Mis raíces**; no se muestra la ruta completa |
+| Pulsar **Abrir carpeta** en **Fuente** en una card | El explorador interno abre la carpeta del archivo |
 | Sin filtros, usar Anterior/Siguiente, los botones numerados o el control deslizante de una sección | Cada sección pagina de forma independiente en bloques de 12 tarjetas; los números permiten saltar directamente a páginas (con puntos suspensivos si hay muchas), la barra también cambia de página y el encabezado indica el rango visible |
 | Pulsar una tarjeta de serie | Se muestran únicamente los episodios de esa serie; con filtros, se muestran en grilla paginada y sin filtros en una fila horizontal |
 | Abrir un detalle con internet y entrar a **Reparto**, luego desconectar internet y volver a abrirlo | Las fotos descargadas se cargan desde el caché del backend incluso sin internet; los datos del reparto se conservan en la BBDD. Si una persona no tiene foto en TMDB, aparecen sus iniciales |
+| Editar metadata de un título, guardar y volver a abrir el detalle | Los valores manuales guardados vuelven a cargarse y no son reemplazados por los valores de TMDB al actualizar la biblioteca |
 | Abrir un título y pulsar **Abrir en explorador** junto a la ruta de fuente | Navega al explorador interno mostrando la carpeta donde está el archivo |
 | Abrir un título desde una card | El detalle abre para el título seleccionado |
 | Pulsar **← Volver al explorador** desde el detalle | Regresa a la biblioteca conservando filtros, búsqueda, serie seleccionada y posición de desplazamiento |
 | Abrir un detalle desde `/explorador` y volver | Regresa a la misma ruta/carpeta y posición del explorador |
 | Pulsar **Actualizar biblioteca** | Se muestra el estado activo, tiempo transcurrido y barra indeterminada; una estimación aparece si hay historial local de duración |
+| Revisar mensajes de la biblioteca al cargar, actualizar, cancelar o guardar un póster | Todos los avisos y errores aparecen únicamente en el panel `library-scan-status`, que sigue visible al terminar la actualización mientras haya un mensaje |
 | Pulsar **Cancelar actualización** durante el escaneo | El escaneo se detiene cooperativamente y se conservan los elementos procesados antes de cancelar |
 | Completar una actualización y revisar los filtros | Las opciones de metadata se recargan para incluir los valores encontrados durante el escaneo |
+| Borrar manualmente un archivo multimedia dentro de una raíz accesible y completar **Actualizar biblioteca** | El archivo desaparece del catálogo y también se limpian sus referencias a favoritos y playlists |
+| Hacer inaccesible una raíz o cancelar un escaneo | No se eliminan del catálogo los archivos que no pudieron comprobarse en esa raíz |

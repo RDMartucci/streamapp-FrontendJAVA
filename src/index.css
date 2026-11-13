@@ -712,6 +712,11 @@ button.user-chip:hover {
   background: rgba(189, 108, 16, 0.1);
 }
 
+.library-scan-status.has-error {
+  border-color: rgba(248, 81, 73, 0.5);
+  background: rgba(248, 81, 73, 0.08);
+}
+
 .library-scan-status-copy {
   display: flex;
   flex: 1;
@@ -739,6 +744,14 @@ button.user-chip:hover {
 
 .library-scan-status-copy .library-scan-cancel-message {
   color: var(--warning);
+}
+
+.library-scan-status-copy .library-scan-message {
+  color: var(--text);
+}
+
+.library-scan-status-copy .library-scan-message.is-error {
+  color: #ff8b86;
 }
 
 .library-scan-progress {

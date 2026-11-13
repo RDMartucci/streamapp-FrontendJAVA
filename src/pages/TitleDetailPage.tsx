@@ -55,11 +55,11 @@ export function TitleDetailPage() {
       .then((res) => {
         if (res) {
           setDetail(res)
-        } else setError('No se encontró información en TMDB para este título')
+        } else setError('No se encontró información para este título')
       })
       .catch((err) => setError(err instanceof ApiClientError ? err.message : 'Error al consultar TMDB'))
       .finally(() => setLoading(false))
-  }, [rawName])
+  }, [rawName, rawPath])
 
   const poster = posterParam && posterParam !== 'null' && posterParam !== '' ? decodeURIComponent(posterParam) : detail?.posterUrl
   const backdrop = detail?.backdropUrl || poster
